@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <!-- Fondo azul oscuro con bordes redondeados (Estilo App) -->
+  <rect width="100" height="100" fill="#1e40af" rx="22"/>
+  
+  <g>
+    <!-- Sombra para darle profundidad 3D al icono -->
+    <path d="M 43 52 L 21 12 Q 51 2 81 12 L 59 52 Z" fill="rgba(0,0,0,0.2)" />
+    <path d="M 43 52 L 21 92 Q 51 102 81 92 L 59 52 Z" fill="rgba(0,0,0,0.2)" />
+    <circle cx="51" cy="52" r="28" fill="rgba(0,0,0,0.2)" />
+    
+    <!-- Alas Naranjas -->
+    <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" />
+    <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" />
+    
+    <!-- Cuerpo Blanco Central -->
+    <circle cx="50" cy="50" r="28" fill="#F8F9FA" />
+    
+    <!-- Anillo Rojo Central -->
+    <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
+    
+    <!-- Agujero Central (Muestra el color de fondo azul) -->
+    <circle cx="50" cy="50" r="5" fill="#1e40af" />
+  </g>
+</svg>

@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Hélices</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body.theme-dark { background-color: #111827; color: #f9fafb; }
+        body.theme-light { background-color: #f3f4f6; color: #111827; }
+        
+        .card-dark { background-color: #1f2937; border-color: #374151; }
+        .card-light { background-color: #ffffff; border-color: #e5e7eb; text-color: #111827; }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            main, header { display: none !important; }
+            #wrapper-pdf { 
+                position: static !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 100% !important; 
+                display: block !important; 
+            }
+        }
+    </style>
+</head>
+<body class="theme-dark min-h-screen flex flex-col font-sans antialiased transition-colors duration-200">
+
+    <header class="bg-blue-700 p-4 text-center shadow-md flex justify-between items-center px-6 select-none">
+        <button onclick="toggleConfigPanel()" class="text-white hover:text-yellow-300 transition text-xl" title="Configuración e Historial">⚙️</button>
+        <h1 onclick="irAPantallaPrincipal()" class="text-xl font-black tracking-wider text-white uppercase cursor-pointer hover:text-blue-200 transition-colors" title="Volver a la Pantalla Principal">
+            Contador de Hélices
+        </h1>
+        <button onclick="toggleTheme()" id="btn-tema" class="text-white hover:text-yellow-300 transition text-xl" title="Cambiar Modo">🌙</button>
+    </header>
+
+    <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-6">
+        
+        <div id="panel-configuracion" class="hidden space-y-4 bg-gray-800 p-4 rounded-xl shadow border border-gray-700 container-dinamico">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                <h2 class="text-base font-bold text-yellow-400 uppercase tracking-wide">Ajustes de la Serie</h2>
+                <button onclick="toggleConfigPanel()" class="text-gray-400 hover:text-white font-bold text-sm">✕ Cerrar</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 border-b border-gray-700/50 pb-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wide">Precio por Hélice</label>
+                    <input type="number" id="precio-helice" value="0" min="0" onchange="cambiarPrecio()"
+                           class="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm font-mono input-dinamico">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wide">Mín. Hélices Podio</label>
+                    <input type="number" id="min-podio" value="10" min="0" onchange="cambiarMinimoPodio()"
+                           class="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm font-mono input-dinamico">
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-1">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wide">Historial de Series</h3>
+                <div id="lista-historial-vacio" class="text-center text-xs text-gray-400 py-4">No hay sesiones guardadas todavía.</div>
+                <div id="contenedor-items-historial" class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    </div>
+                <button onclick="borrarTodoElHistorial()" class="w-full bg-red-900/40 hover:bg-red-900 text-red-200 text-xs py-2 rounded-lg transition mt-2">⚠️ Borrar Todo el Historial</button>
+            </div>
+        </div>
+
+        <div id="panel-registro" class="space-y-6">
+            
+            <section id="card-config" class="card-dark p-4 rounded-xl shadow border">
+                <label class="block text-[11px] font-bold text-gray-400 uppercase mb-1 tracking-wide">Nuevo Tirador</label>
+                <div class="flex gap-1">
+                    <input type="text" id="nombre-tirador" placeholder="Nombre del tirador..." 
+                           class="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm input-dinamico">
+                    <button onclick="agregarTirador()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg transition text-sm active:scale-95">Añadir</button>
+                </div>
+            </section>
+
+            <section id="card-lista" class="card-dark p-4 rounded-xl shadow border">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase mb-3 tracking-wide">Tiradores Añadidos (Toque para ver historial)</h2>
+                <div id="lista-tiradores" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    </div>
+            </section>
+
+            <section id="card-tiro" class="card-dark p-4 rounded-xl shadow border text-center space-y-4">
+                <div class="flex justify-between items-center px-2">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pedana Activa</h2>
+                    <div id="indicador-racha" class="hidden bg-yellow-600/20 text-yellow-400 text-xs font-bold px-2 py-0.5 rounded-full border border-yellow-600/40 animate-pulse">
+                        🔥 Racha: 0
+                    </div>
+                </div>
+                <div id="tirador-seleccionado-nombre" class="text-xl font-bold text-blue-400 h-7 transition-all">
+                    Seleccioná un tirador
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="registrarTiro(true)" id="btn-pego" disabled
+                            class="bg-green-600 disabled:opacity-20 disabled:hover:bg-green-600 hover:bg-green-500 text-white font-extrabold py-4 rounded-xl text-lg transition shadow-lg active:scale-95">
+                        ¡PEGÓ!
+                    </button>
+                    <button onclick="registrarTiro(false)" id="btn-erro" disabled
+                            class="bg-red-600 disabled:opacity-20 disabled:hover:bg-red-600 hover:bg-red-500 text-white font-extrabold py-4 rounded-xl text-lg transition shadow-lg active:scale-95">
+                        ERRÓ
+                    </button>
+                </div>
+
+                <button onclick="deshacerUltimoTiro()" id="btn-deshacer" disabled
+                        class="w-full bg-gray-700/50 disabled:opacity-0 hover:bg-gray-600/50 text-gray-300 font-medium py-2 rounded-lg transition text-xs flex items-center justify-center gap-1.5 border border-gray-600">
+                    ↩️ Deshacer / Borrar Último Disparo
+                </button>
+            </section>
+
+            <button onclick="verPodioParcial()" 
+                    class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-yellow-400 font-bold py-2.5 rounded-xl transition text-center uppercase tracking-wider text-xs shadow active:scale-95 flex items-center justify-center gap-2">
+                📊 Ver Clasificación Parcial
+            </button>
+
+            <button onclick="finalizarSesion()" 
+                    class="w-full bg-yellow-600 hover:bg-yellow-500 text-gray-950 font-extrabold py-3.5 rounded-xl transition text-center uppercase tracking-wider shadow-lg active:scale-95">
+                🏁 Finalizar Sesión
+            </button>
+        </div>
+
+        <div id="panel-resultados" class="hidden space-y-6 container-dinamico">
+            
+            <section id="card-podio" class="card-dark p-4 rounded-xl shadow border text-center">
+                <div class="space-y-0.5 mb-2">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Podio de Efectividad</h3>
+                    <p id="podio-requisito-texto" class="text-[10px] text-yellow-500/80 italic">*Mínimo obligatorio: 10 hélices disparadas</p>
+                </div>
+                <div id="contenedor-podio" class="flex justify-center items-end space-x-2 h-44 pt-10 pb-2">
+                    </div>
+            </section>
+
+            <section id="card-tabla" class="card-dark p-4 rounded-xl shadow border space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-2 border-b border-gray-700/50 pb-2">
+                    <h2 class="text-base font-bold text-yellow-400 uppercase tracking-wider">Clasificación General</h2>
+                    
+                    <div class="flex bg-gray-900/80 p-0.5 rounded-lg border border-gray-700 text-[10px] font-bold">
+                        <button onclick="cambiarCriterioOrden('porcentaje')" id="btn-orden-porcentaje" 
+                                class="px-2 py-1 rounded-md transition-colors bg-blue-600 text-white">
+                            % Eficacia
+                        </button>
+                        <button onclick="cambiarCriterioOrden('helices')" id="btn-orden-helices" 
+                                class="px-2 py-1 rounded-md transition-colors text-gray-400 hover:text-white">
+                            H. Pegadas
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-700 text-gray-400 text-xs uppercase">
+                                <th class="py-2">Tirador</th>
+                                <th class="py-2 text-center">Total</th>
+                                <th class="py-2 text-center text-green-400">P</th>
+                                <th class="py-2 text-center text-red-400">E</th>
+                                <th class="py-2 text-right" id="col-dinamica-header">% Efic.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-resultados" class="divide-y divide-gray-700/50 text-sm">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 flex justify-between items-center font-mono text-sm">
+                    <div class="text-xs text-gray-400 uppercase font-sans font-bold">Caja Total Pedana:</div>
+                    <div class="text-right">
+                        <div id="resumen-total-helices" class="text-xs text-gray-300">0 hélices</div>
+                        <div id="resumen-total-dinero" class="text-base font-bold text-green-400">$0.00</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="card-grafico" class="card-dark p-4 rounded-xl shadow border">
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-wider text-center">Gráfico de Rendimiento</h3>
+                <div class="w-full max-h-64">
+                    <canvas id="graficoResultados"></canvas>
+                </div>
+            </section>
+
+            <div class="space-y-2 pt-2">
+                <button onclick="compartirWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition text-center shadow flex items-center justify-center gap-2 active:scale-95">
+                    💬 Compartir Resumen por WhatsApp
+                </button>
+                <button onclick="imprimirConSistemaNativo()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition text-center shadow flex items-center justify-center gap-2 active:scale-95">
+                    📄 Guardar Reporte PDF (Sistema Celular)
+                </button>
+                <button onclick="reiniciarApp()" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-2 rounded-lg transition text-sm">
+                    🔄 Nueva Sesión
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal-podio" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
+        <div class="p-5 rounded-2xl shadow-2xl border w-full max-w-sm text-center space-y-4 container-dinamico" id="modal-container-style" style="background-color: #1f2937; border-color: #374151;">
+            <div class="flex justify-between items-start border-b border-gray-700/50 pb-2">
+                <div class="text-left">
+                    <h3 class="text-base font-extrabold text-yellow-400 uppercase tracking-wider">Clasificación Parcial</h3>
+                    <p id="modal-requisito-texto" class="text-[10px] text-gray-400 italic">*Mínimo para podio: 10 hélices</p>
+                </div>
+                
+                <div class="flex bg-gray-900/80 p-0.5 rounded-lg border border-gray-700 text-[9px] font-bold">
+                    <button onclick="cambiarCriterioOrden('porcentaje')" id="btn-modal-porcentaje" class="px-1.5 py-0.5 rounded transition-colors bg-blue-600 text-white">%</button>
+                    <button onclick="cambiarCriterioOrden('helices')" id="btn-modal-helices" class="px-1.5 py-0.5 rounded transition-colors text-gray-400">H</button>
+                </div>
+            </div>
+            
+            <div id="contenedor-podio-parcial" class="flex justify-center items-end space-x-2 h-44 pt-10 pb-4">
+                </div>
+
+            <div class="text-left space-y-1.5 max-h-40 overflow-y-auto pr-1" id="lista-parcial-completa">
+                </div>
+
+            <button onclick="cerrarModalPodio()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-sm active:scale-95">
+                Volver a la Pedana
+            </button>
+        </div>
+    </div>
+
+    <div id="wrapper-pdf" style="position: absolute; left: -9999px; top: -9999px; width: 210mm;">
+        <div id="documento-pdf" class="p-8 bg-white text-gray-900 font-sans" style="box-sizing: border-box; background-color: white;">
+            <div style="border-bottom: 2px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 20px;">
+                <h1 style="font-size: 24px; font-weight: bold; color: #1d4ed8; margin: 0; text-transform: uppercase;">Sesión de Tiro</h1>
+                <p style="font-size: 12px; color: #4b5563; margin: 4px 0 0 0;" id="pdf-fecha"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; background-color: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #111827;">
+                <div><strong>Precio por Hélice:</strong> $<span id="pdf-valor-unitario">0</span></div>
+                <div style="text-align: right;">
+                    <strong>Total Hélices de la Serie:</strong> <span id="pdf-total-helices">0</span><br>
+                    <strong style="color: #16a34a; font-size: 15px;">Total Caja Recaudada: $<span id="pdf-total-dinero">0</span></strong>
+                </div>
+            </div>
+            <h3 style="font-size: 13px; text-transform: uppercase; color: #374151; margin-bottom: 8px; font-weight: 700;" id="pdf-titulo-tabla">Clasificación General</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 25px;">
+                <thead>
+                    <tr style="background-color: #e5e7eb; border-bottom: 2px solid #9ca3af; font-size: 11px; text-transform: uppercase; color: #374151;">
+                        <th style="padding: 8px; font-weight: bold;">Tirador</th>
+                        <th style="padding: 8px; text-align: center; font-weight: bold;">Total Tiros</th>
+                        <th style="padding: 8px; text-align: center; font-weight: bold; color: #16a34a;">P</th>
+                        <th style="padding: 8px; text-align: center; font-weight: bold; color: #dc2626;">E</th>
+                        <th style="padding: 8px; text-align: center; font-weight: bold;" id="pdf-col-dinamica-header">% Efic.</th>
+                        <th style="padding: 8px; text-align: right; font-weight: bold;">Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-tabla-cuerpo" style="font-size: 12px; color: #111827;"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let tiradores = [];
+        let idSeleccionado = null;
+        let idHistorialDesplegado = null;
+        let estadoApp = 'registro';
+        let precioHelice = 0;
+        let minimoPodio = 10;
+        let currentTheme = 'dark';
+        let criterioOrden = 'porcentaje'; // 'porcentaje' o 'helices'
+        let graficoInstance = null;
+
+        window.onload = function() {
+            try {
+                if (localStorage.getItem('h_tiradores')) tiradores = JSON.parse(localStorage.getItem('h_tiradores')) || [];
+                if (localStorage.getItem('h_estado')) estadoApp = localStorage.getItem('h_estado') || 'registro';
+                if (localStorage.getItem('h_idSel')) idSeleccionado = JSON.parse(localStorage.getItem('h_idSel'));
+                if (localStorage.getItem('h_precio')) {
+                    precioHelice = parseFloat(localStorage.getItem('h_precio')) || 0;
+                    document.getElementById('precio-helice').value = precioHelice;
+                }
+                if (localStorage.getItem('h_minPodio')) {
+                    minimoPodio = parseInt(localStorage.getItem('h_minPodio')) || 10;
+                    document.getElementById('min-podio').value = minimoPodio;
+                }
+                if (localStorage.getItem('h_criterio')) {
+                    criterioOrden = localStorage.getItem('h_criterio') || 'porcentaje';
+                }
+                if (localStorage.getItem('h_tema')) {
+                    currentTheme = localStorage.getItem('h_tema') || 'dark';
+                }
+                
+                aplicarTema(currentTheme, false);
+
+                if (estadoApp === 'resultados') {
+                    mostrarPantallaResultados();
+                } else {
+                    actualizarInterfaz();
+                }
+                renderizarHistorialSidebar();
+            } catch (e) {
+                console.error("Error crítico, limpiando caché...", e);
+                localStorage.removeItem('h_tiradores');
+                localStorage.removeItem('h_estado');
+                tiradores = [];
+                estadoApp = 'registro';
+                actualizarInterfaz();
+            }
+        };
+
+        function guardarEnLocalStorage() {
+            localStorage.setItem('h_tiradores', JSON.stringify(tiradores));
+            localStorage.setItem('h_estado', estadoApp);
+            localStorage.setItem('h_idSel', JSON.stringify(idSeleccionado));
+            localStorage.setItem('h_precio', precioHelice.toString());
+            localStorage.setItem('h_minPodio', minimoPodio.toString());
+            localStorage.setItem('h_criterio', criterioOrden);
+        }
+
+        function irAPantallaPrincipal() {
+            document.getElementById('panel-resultados').classList.add('hidden');
+            document.getElementById('panel-configuracion').classList.add('hidden');
+            document.getElementById('panel-registro').classList.remove('hidden');
+            estadoApp = 'registro';
+            guardarEnLocalStorage();
+            actualizarInterfaz();
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('h_tema', currentTheme);
+            aplicarTema(currentTheme, true);
+        }
+
+        function aplicarTema(theme, activarResultados = true) {
+            const body = document.body;
+            const btn = document.getElementById('btn-tema');
+            const cards = document.querySelectorAll('.card-dark, .card-light');
+            const containers = document.querySelectorAll('.container-dinamico');
+            const inputs = document.querySelectorAll('.input-dinamico');
+            const modalStyle = document.getElementById('modal-container-style');
+
+            if (theme === 'light') {
+                body.className = "theme-light min-h-screen flex flex-col font-sans antialiased transition-colors duration-200";
+                if (btn) btn.textContent = "☀️";
+                cards.forEach(c => { c.classList.remove('card-dark'); c.classList.add('card-light'); });
+                containers.forEach(cn => { cn.classList.remove('bg-gray-800', 'border-gray-700'); cn.classList.add('bg-white', 'border-gray-200'); });
+                inputs.forEach(i => { i.classList.remove('text-white'); i.classList.add('text-gray-900'); });
+                if (modalStyle) { modalStyle.style.backgroundColor = '#ffffff'; modalStyle.style.borderColor = '#e5e7eb'; }
+            } else {
+                body.className = "theme-dark min-h-screen flex flex-col font-sans antialiased transition-colors duration-200";
+                if (btn) btn.textContent = "🌙";
+                cards.forEach(c => { c.classList.remove('card-light'); c.classList.add('card-dark'); });
+                containers.forEach(cn => { cn.classList.remove('bg-white', 'border-gray-200'); cn.classList.add('bg-gray-800', 'border-gray-700'); });
+                inputs.forEach(i => { i.classList.remove('text-gray-900'); i.classList.add('text-white'); });
+                if (modalStyle) { modalStyle.style.backgroundColor = '#1f2937'; modalStyle.style.borderColor = '#374151'; }
+            }
+            if (activarResultados && estadoApp === 'resultados') mostrarPantallaResultados();
+        }
+
+        function cambiarPrecio() {
+            precioHelice = parseFloat(document.getElementById('precio-helice').value) || 0;
+            guardarEnLocalStorage();
+        }
+
+        function cambiarMinimoPodio() {
+            minimoPodio = parseInt(document.getElementById('min-podio').value) || 0;
+            guardarEnLocalStorage();
+            if (estadoApp === 'resultados') mostrarPantallaResultados();
+        }
+
+        // --- SISTEMA DINÁMICO DE CONTROL DEL SWITCH ---
+        function cambiarCriterioOrden(nuevoCriterio) {
+            criterioOrden = nuevoCriterio;
+            guardarEnLocalStorage();
+            
+            // Refrescar interfaz según qué pantalla esté mirando el usuario
+            if (estadoApp === 'resultados') {
+                mostrarPantallaResultados();
+            } else {
+                // Si está en medio de la serie y abre el modal parcial, se actualiza el modal
+                verPodioParcial();
+            }
+        }
+
+        function agregarTirador() {
+            const input = document.getElementById('nombre-tirador');
+            const nombre = input.value.trim();
+            if (nombre === '') return;
+            tiradores.push({ id: Date.now(), nombre: nombre, tiros: [] });
+            input.value = '';
+            guardarEnLocalStorage();
+            actualizarInterfaz();
+        }
+
+        function editarTirador(id, event) {
+            event.stopPropagation();
+            const tirador = tiradores.find(t => t.id === id);
+            if (!tirador) return;
+            const nuevoNombre = prompt("Editar nombre del tirador:", tirador.nombre);
+            if (nuevoNombre && nuevoNombre.trim() !== '') {
+                tirador.nombre = nuevoNombre.trim();
+                guardarEnLocalStorage();
+                actualizarInterfaz();
+            }
+        }
+
+        function eliminarTirador(id, event) {
+            event.stopPropagation();
+            if (!confirm("¿Seguro que querés eliminar este tirador y todos sus registros?")) return;
+            tiradores = tiradores.filter(t => t.id !== id);
+            if (idSeleccionado === id) idSeleccionado = null;
+            guardarEnLocalStorage();
+            actualizarInterfaz();
+        }
+
+        function seleccionarTirador(id) {
+            if (idSeleccionado === id) {
+                idHistorialDesplegado = (idHistorialDesplegado === id) ? null : id;
+            } else {
+                idSeleccionado = id;
+                idHistorialDesplegado = null;
+            }
+            guardarEnLocalStorage();
+            actualizarInterfaz();
+        }
+
+        function registrarTiro(pego) {
+            if (idSeleccionado === null) return;
+            const tirador = tiradores.find(t => t.id === idSeleccionado);
+            if (tirador) {
+                tirador.tiros.push(pego);
+                guardarEnLocalStorage();
+                actualizarInterfaz();
+            }
+        }
+
+        function deshacerUltimoTiro() {
+            if (idSeleccionado === null) return;
+            const tirador = tiradores.find(t => t.id === idSeleccionado);
+            if (tirador && tirador.tiros.length > 0) {
+                tirador.tiros.pop();
+                guardarEnLocalStorage();
+                actualizarInterfaz();
+            }
+        }
+
+        function obtenerEstadisticas(t) {
+            if (!t) return { total: 0, pegados: 0, errados: 0, efectividad: "0.0", rachaActual: 0, rachaMaxima: 0, costoTotal: 0 };
+            const tiros = Array.isArray(t.tiros) ? t.tiros : [];
+            const pegados = tiros.filter(v => v === true).length;
+            const errados = tiros.filter(v => v === false).length;
+            const total = tiros.length;
+            const efectividad = total > 0 ? ((pegados / total) * 100).toFixed(1) : "0.0";
+            const costoTotal = total * precioHelice;
+
+            let rachaActual = 0; let rachaMaxima = 0;
+            for (let i = 0; i < tiros.length; i++) {
+                if (tiros[i] === true) {
+                    rachaActual++;
+                    if (rachaActual > rachaMaxima) rachaMaxima = rachaActual;
+                } else {
+                    rachaActual = 0;
+                }
+            }
+            return { total, pegados, errados, efectividad, rachaActual, rachaMaxima, costoTotal };
+        }
+
+        function obtenerListaOrdenada() {
+            return [...tiradores].sort((a, b) => {
+                const statA = obtenerEstadisticas(a);
+                const statB = obtenerEstadisticas(b);
+                if (criterioOrden === 'porcentaje') {
+                    // Orden por % Eficacia (Desempate por cantidad pegadas)
+                    return parseFloat(statB.efectividad) - parseFloat(statA.efectividad) || statB.pegados - statA.pegados;
+                } else {
+                    // Orden por Hélices Pegadas (Desempate por % Eficacia)
+                    return statB.pegados - statA.pegados || parseFloat(statB.efectividad) - parseFloat(statA.efectividad);
+                }
+            });
+        }
+
+        function actualizarInterfaz() {
+            const lista = document.getElementById('lista-tiradores');
+            if (!lista) return;
+            lista.innerHTML = '';
+
+            if (tiradores.length === 0) {
+                lista.innerHTML = `<div class="text-center text-xs text-gray-500 py-4">No hay tiradores anotados.</div>`;
+            }
+
+            tiradores.forEach(t => {
+                const stats = obtenerEstadisticas(t);
+                const esSeleccionado = t.id === idSeleccionado;
+                const mostrarHistorial = t.id === idHistorialDesplegado;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `p-3 rounded-lg transition border flex flex-col cursor-pointer ${
+                    esSeleccionado 
+                    ? 'bg-blue-950/40 border-blue-500 text-blue-200 ring-2 ring-blue-500' 
+                    : (currentTheme === 'dark' ? 'bg-gray-900/60 border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-700')
+                }`;
+                itemDiv.onclick = () => seleccionarTirador(t.id);
+
+                itemDiv.innerHTML = `
+                    <div class="flex justify-between items-center w-full">
+                        <div class="truncate font-semibold text-sm flex-1">${t.nombre}</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded ${currentTheme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}">
+                                H: ${stats.total} | P:${stats.pegados}
+                            </span>
+                            <button onclick="editarTirador(${t.id}, event)" class="p-1 hover:text-blue-400 transition text-xs">✏️</button>
+                            <button onclick="eliminarTirador(${t.id}, event)" class="p-1 hover:text-red-400 transition text-xs">❌</button>
+                        </div>
+                    </div>
+                `;
+
+                if (mostrarHistorial) {
+                    const cadenaTiros = t.tiros.length > 0 ? t.tiros.map(p => p ? '🟢' : '🔴').join(' ') : 'Sin tiros cargados';
+                    const historialDiv = document.createElement('div');
+                    historialDiv.className = "mt-2 pt-2 border-t border-gray-700/50 text-xs space-y-1 opacity-90";
+                    historialDiv.innerHTML = `
+                        <div class="tracking-widest overflow-x-auto py-0.5 font-mono">${cadenaTiros}</div>
+                        <div class="flex justify-between text-[11px] opacity-70">
+                            <span>Racha: <strong>🔥 ${stats.rachaActual}</strong> | Max: <strong>🏆 ${stats.rachaMaxima}</strong></span>
+                            <span>Costo: <strong>$${stats.costoTotal.toFixed(2)}</strong></span>
+                        </div>
+                    `;
+                    itemDiv.appendChild(historialDiv);
+                }
+                lista.appendChild(itemDiv);
+            });
+
+            const txtNombre = document.getElementById('tirador-seleccionado-nombre');
+            const btnPego = document.getElementById('btn-pego');
+            const btnErro = document.getElementById('btn-erro');
+            const btnDeshacer = document.getElementById('btn-deshacer');
+            const badgeRacha = document.getElementById('indicador-racha');
+
+            if (idSeleccionado !== null) {
+                const seleccionado = tiradores.find(t => t.id === idSeleccionado);
+                if (seleccionado) {
+                    const stats = obtenerEstadisticas(seleccionado);
+                    txtNombre.textContent = `🎯 ${seleccionado.nombre}`;
+                    btnPego.disabled = false;
+                    btnErro.disabled = false;
+                    btnDeshacer.disabled = seleccionado.tiros.length === 0;
+                    
+                    if (stats.rachaActual > 0) {
+                        badgeRacha.textContent = `🔥 Racha: ${stats.rachaActual}`;
+                        badgeRacha.classList.remove('hidden');
+                    } else {
+                        badgeRacha.classList.add('hidden');
+                    }
+                }
+            } else {
+                txtNombre.textContent = 'Seleccioná un tirador';
+                btnPego.disabled = true;
+                btnErro.disabled = true;
+                btnDeshacer.disabled = true;
+                badgeRacha.classList.add('hidden');
+            }
+        }
+
+        function renderizarEstructuraPodio(listaFiltrada) {
+            const podio = document.getElementById(estadoApp === 'resultados' ? 'contenedor-podio' : 'contenedor-podio-parcial');
+            if (!podio) return;
+            podio.innerHTML = '';
+            
+            const puestos = [
+                { index: 1, label: '2°', color: 'bg-gray-400', h: 'h-24' },
+                { index: 0, label: '1°', color: 'bg-yellow-500', h: 'h-32' },
+                { index: 2, label: '3°', color: 'bg-amber-700', h: 'h-16' }
+            ];
+
+            puestos.forEach(p => {
+                const itemPodio = listaFiltrada[p.index];
+                const col = document.createElement('div');
+                col.className = "flex flex-col items-center justify-end flex-1 max-w-[90px] min-h-[140px]";
+                
+                if (itemPodio) {
+                    // El valor secundario que dibuja el bloque cambia según el switch activo
+                    const valorSub = criterioOrden === 'porcentaje' 
+                        ? `${itemPodio.stats.efectividad}%` 
+                        : `${itemPodio.stats.pegados} P`;
+
+                    col.innerHTML = `
+                        <div class="text-[11px] font-bold truncate w-full text-center mb-1">${itemPodio.t.nombre}</div>
+                        <div class="text-[10px] font-mono text-blue-400 font-bold mb-2">${valorSub}</div>
+                        <div class="${p.color} ${p.h} w-full rounded-t-lg flex items-center justify-center text-gray-950 font-black text-lg shadow-md">
+                            ${p.label}
+                        </div>
+                    `;
+                } else {
+                    col.innerHTML = ` <div class="bg-gray-700/20 h-8 w-full rounded-t-lg border border-dashed border-gray-600 flex items-center justify-center text-xs text-gray-600">-</div> `;
+                }
+                podio.appendChild(col);
+            });
+        }
+
+        function verPodioParcial() {
+            if (tiradores.length === 0) {
+                alert("No hay tiradores para computar la clasificación.");
+                return;
+            }
+
+            const listaCompleta = document.getElementById('lista-parcial-completa');
+            if (!listaCompleta) return;
+            listaCompleta.innerHTML = '';
+
+            document.getElementById('modal-requisito-texto').textContent = `*Mínimo para podio: ${minimoPodio} hélices`;
+
+            // Sincronizar el diseño visual del switch dentro del modal parcial
+            const btnModPct = document.getElementById('btn-modal-porcentaje');
+            const btnModHel = document.getElementById('btn-modal-helices');
+            if (criterioOrden === 'porcentaje') {
+                btnModPct.className = "px-1.5 py-0.5 rounded bg-blue-600 text-white";
+                btnModHel.className = "px-1.5 py-0.5 rounded text-gray-400";
+            } else {
+                btnModPct.className = "px-1.5 py-0.5 rounded text-gray-400";
+                btnModHel.className = "px-1.5 py-0.5 rounded bg-blue-600 text-white";
+            }
+
+            const tiradoresOrdenadosCriterio = obtenerListaOrdenada();
+            
+            const tiradoresFiltradosPodio = tiradoresOrdenadosCriterio
+                .map(t => ({ t, stats: obtenerEstadisticas(t) }))
+                .filter(item => item.stats.total >= minimoPodio);
+
+            renderizarEstructuraPodio(tiradoresFiltradosPodio);
+
+            tiradoresOrdenadosCriterio.forEach((t, i) => {
+                const stats = obtenerEstadisticas(t);
+                const row = document.createElement('div');
+                row.className = `flex justify-between items-center text-xs py-1 px-2 rounded font-mono ${currentTheme === 'dark' ? 'hover:bg-gray-700/50 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`;
+                
+                // Resalta la métrica del switch activo
+                const textoStats = criterioOrden === 'porcentaje'
+                    ? `<strong>${stats.efectividad}%</strong> | P: ${stats.pegados} | Tot: ${stats.total}`
+                    : `<strong class="text-green-400">${stats.pegados} P</strong> | ${stats.efectividad}% | Tot: ${stats.total}`;
+
+                row.innerHTML = `
+                    <span class="font-sans font-medium truncate max-w-[140px]">${i+1}. ${t.nombre}</span>
+                    <span>${textoStats}</span>
+                `;
+                listaCompleta.appendChild(row);
+            });
+
+            document.getElementById('modal-podio').classList.remove('hidden');
+        }
+
+        function cerrarModalPodio() {
+            document.getElementById('modal-podio').classList.add('hidden');
+        }
+
+        function finalizarSesion() {
+            if (tiradores.length === 0) {
+                alert('Primero debés agregar al menos un tirador.');
+                return;
+            }
+            if (!confirm('⚠️ ¿Estás seguro de que querés finalizar la sesión?\nSe cerrarán las planillas de tiro de la pedana actual y se archivarán en el historial.')) {
+                return;
+            }
+            
+            let historial = [];
+            if (localStorage.getItem('h_historial')) historial = JSON.parse(localStorage.getItem('h_historial'));
+            
+            historial.unshift({
+                id: Date.now(),
+                fecha: new Date().toLocaleString('es-AR'),
+                precioUnitario: precioHelice,
+                tiradores: JSON.parse(JSON.stringify(tiradores))
+            });
+            localStorage.setItem('h_historial', JSON.stringify(historial));
+            
+            estadoApp = 'resultados';
+            guardarEnLocalStorage();
+            mostrarPantallaResultados();
+            renderizarHistorialSidebar();
+        }
+
+        function mostrarPantallaResultados() {
+            document.getElementById('panel-registro').classList.add('hidden');
+            document.getElementById('panel-configuracion').classList.add('hidden');
+            document.getElementById('panel-resultados').classList.remove('hidden');
+
+            const reqTexto = document.getElementById('podio-requisito-texto');
+            if (reqTexto) reqTexto.textContent = `*Mínimo obligatorio: ${minimoPodio} hélices disparadas`;
+
+            // Actualizar estilo visual del Switch en la pantalla de cierre
+            const btnPct = document.getElementById('btn-orden-porcentaje');
+            const btnHel = document.getElementById('btn-orden-helices');
+            const tableHeaderDinamico = document.getElementById('col-dinamica-header');
+
+            if (criterioOrden === 'porcentaje') {
+                btnPct.className = "px-2 py-1 rounded-md bg-blue-600 text-white";
+                btnHel.className = "px-2 py-1 rounded-md text-gray-400 hover:text-white";
+                if(tableHeaderDinamico) tableHeaderDinamico.textContent = "% Efic.";
+            } else {
+                btnPct.className = "px-2 py-1 rounded-md text-gray-400 hover:text-white";
+                btnHel.className = "px-2 py-1 rounded-md bg-blue-600 text-white";
+                if(tableHeaderDinamico) tableHeaderDinamico.textContent = "P. Totales";
+            }
+
+            const tiradoresOrdenadosTabla = obtenerListaOrdenada();
+
+            const tiradoresParaPodio = tiradoresOrdenadosTabla
+                .map(t => ({ t, stats: obtenerEstadisticas(t) }))
+                .filter(item => item.stats.total >= minimoPodio);
+
+            renderizarEstructuraPodio(tiradoresParaPodio);
+
+            const tabla = document.getElementById('tabla-resultados');
+            if (tabla) {
+                tabla.innerHTML = '';
+                let granTotalHelices = 0; let granTotalDinero = 0;
+
+                tiradoresOrdenadosTabla.forEach(t => {
+                    const stats = obtenerEstadisticas(t);
+                    granTotalHelices += stats.total; granTotalDinero += stats.costoTotal;
+
+                    // Muestra resaltado el valor que dicta el switch en la última celda de la fila
+                    const celdaDinamica = criterioOrden === 'porcentaje'
+                        ? `${stats.efectividad}%`
+                        : `${stats.pegados} P`;
+
+                    const fila = document.createElement('tr');
+                    fila.className = "border-b border-gray-700/30 hover:bg-gray-50/5";
+                    fila.innerHTML = `
+                        <td class="py-2.5 font-semibold">${t.nombre}</td>
+                        <td class="py-2.5 text-center font-mono">${stats.total}</td>
+                        <td class="py-2.5 text-center text-green-400 font-bold font-mono">${stats.pegados}</td>
+                        <td class="py-2.5 text-center text-red-400 font-bold font-mono">${stats.errados}</td>
+                        <td class="py-2.5 text-right text-green-500 font-bold font-mono">${celdaDinamica}</td>
+                    `;
+                    tabla.appendChild(fila);
+                });
+
+                document.getElementById('resumen-total-helices').textContent = `${granTotalHelices} hélices disparadas`;
+                document.getElementById('resumen-total-dinero').textContent = `$${granTotalDinero.toFixed(2)}`;
+            }
+
+            const canvasEl = document.getElementById('graficoResultados');
+            if (canvasEl && typeof Chart !== 'undefined') {
+                const ctx = canvasEl.getContext('2d');
+                if (graficoInstance) graficoInstance.destroy();
+
+                const nombres = tiradoresOrdenadosTabla.map(t => t.nombre);
+                const pegadosData = tiradoresOrdenadosTabla.map(t => obtenerEstadisticas(t).pegados);
+                const erradosData = tiradoresOrdenadosTabla.map(t => obtenerEstadisticas(t).errados);
+
+                const colorTexto = currentTheme === 'dark' ? '#9ca3af' : '#374151';
+                const colorGrid = currentTheme === 'dark' ? 'rgba(55, 65, 81, 0.4)' : 'rgba(229, 231, 235, 0.6)';
+                const fontStyle = { family: 'ui-sans-serif, system-ui, sans-serif', size: 11, weight: '500' };
+
+                graficoInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: nombres,
+                        datasets: [
+                            { 
+                                label: 'Pegados', 
+                                data: pegadosData, 
+                                backgroundColor: '#10b981', 
+                                borderRadius: 6,
+                                borderSkipped: false,
+                                barPercentage: 0.55,
+                                categoryPercentage: 0.75
+                            },
+                            { 
+                                label: 'Errados', 
+                                data: erradosData, 
+                                backgroundColor: '#f43f5e', 
+                                borderRadius: 6,
+                                borderSkipped: false,
+                                barPercentage: 0.55,
+                                categoryPercentage: 0.75
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { labels: { color: colorTexto, font: fontStyle, usePointStyle: true, pointStyle: 'circle' } },
+                            tooltip: {
+                                backgroundColor: currentTheme === 'dark' ? '#1f2937' : '#ffffff',
+                                titleColor: currentTheme === 'dark' ? '#ffffff' : '#111827',
+                                bodyColor: currentTheme === 'dark' ? '#d1d5db' : '#374151',
+                                borderColor: currentTheme === 'dark' ? '#4b5563' : '#e5e7eb',
+                                borderWidth: 1,
+                                padding: 10,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: colorTexto, font: fontStyle }, grid: { display: false } },
+                            y: { ticks: { color: colorTexto, stepSize: 1, font: fontStyle }, grid: { color: colorGrid, drawBorder: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function compartirWhatsApp() {
+            const tiradoresOrdenados = obtenerListaOrdenada();
+            let granTotalHelices = 0;
+
+            let texto = `🏆 *RESUMEN DE TIRO* 🏆\n`;
+            texto += `📅 _Fecha: ${new Date().toLocaleDateString('es-AR')}_\n`;
+            
+            const modoTxt = criterioOrden === 'porcentaje' ? 'POR % EFICACIA' : 'POR HÉLICES PEGADAS';
+            texto += `📊 _Clasificación: ${modoTxt}_\n\n`;
+            texto += `*RANKING GENERAL:*\n`;
+
+            tiradoresOrdenados.forEach((t, idx) => {
+                const stats = obtenerEstadisticas(t);
+                granTotalHelices += stats.total;
+                let medalla = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '🔹';
+                
+                // Formatea el mensaje destacando la variable del switch
+                if (criterioOrden === 'porcentaje') {
+                    texto += `${medalla} *${t.nombre}*: ${stats.efectividad}% (${stats.pegados} Pegadas | ${stats.total} Totales)\n`;
+                } else {
+                    texto += `${medalla} *${t.nombre}*: ${stats.pegados} Pegadas (${stats.efectividad}% Efic. | ${stats.total} Totales)\n`;
+                }
+            });
+
+            texto += `\n📊 *TOTAL PEDANA:*`;
+            texto += `\n🔋 Total Hélices Lanzadas: ${granTotalHelices}`;
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function armarEstructuraDatosPDF() {
+            const opcionesFecha = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            const fechaEl = document.getElementById('pdf-fecha');
+            if (fechaEl) fechaEl.textContent = `Generado el: ${new Date().toLocaleDateString('es-AR', opcionesFecha)}`;
+            
+            const pdfTituloTabla = document.getElementById('pdf-titulo-tabla');
+            const pdfColHeader = document.getElementById('pdf-col-dinamica-header');
+            
+            if(pdfTituloTabla) {
+                pdfTituloTabla.textContent = criterioOrden === 'porcentaje' 
+                    ? 'Clasificación General - Ordenada por Porcentaje' 
+                    : 'Clasificación General - Ordenada por Impactos Totales';
+            }
+            if(pdfColHeader) {
+                pdfColHeader.textContent = criterioOrden === 'porcentaje' ? '% Efic.' : 'P. Totales';
+            }
+
+            const tiradoresOrdenados = obtenerListaOrdenada();
+
+            let granTotalHelices = 0; let granTotalDinero = 0;
+            const pdfTabla = document.getElementById('pdf-tabla-cuerpo');
+            if (pdfTabla) {
+                pdfTabla.innerHTML = '';
+                tiradoresOrdenados.forEach((t, index) => {
+                    const stats = obtenerEstadisticas(t);
+                    granTotalHelices += stats.total; granTotalDinero += stats.costoTotal;
+                    
+                    const celdaPdfDinamica = criterioOrden === 'porcentaje'
+                        ? `${stats.efectividad}%`
+                        : `${stats.pegados} P`;
+
+                    const fila = document.createElement('tr');
+                    fila.style.borderBottom = "1px solid #e5e7eb";
+                    fila.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#f9fafb";
+                    fila.innerHTML = `
+                        <td style="padding: 8px; font-weight: 600; color: #111827;">${t.nombre}</td>
+                        <td style="padding: 8px; text-align: center; font-family: monospace;">${stats.total}</td>
+                        <td style="padding: 8px; text-align: center; color: #16a34a; font-weight: bold; font-family: monospace;">${stats.pegados}</td>
+                        <td style="padding: 8px; text-align: center; color: #dc2626; font-weight: bold; font-family: monospace;">${stats.errados}</td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold; font-family: monospace; color: #1d4ed8;">${celdaPdfDinamica}</td>
+                        <td style="padding: 8px; text-align: right; font-family: monospace; color: #16a34a;">$${stats.costoTotal.toFixed(2)}</td>
+                    `;
+                    pdfTabla.appendChild(fila);
+                });
+
+                document.getElementById('pdf-valor-unitario').textContent = precioHelice.toFixed(2);
+                document.getElementById('pdf-total-helices').textContent = granTotalHelices;
+                document.getElementById('pdf-total-dinero').textContent = granTotalDinero.toFixed(2);
+            }
+        }
+
+        function imprimirConSistemaNativo() {
+            armarEstructuraDatosPDF();
+            const tituloOriginal = document.title;
+            const hoy = new Date();
+            const fechaFormateada = hoy.toLocaleDateString('es-AR').replace(/\//g, '-');
+            document.title = `Sesion de Tiro - ${fechaFormateada}`;
+            window.print();
+            document.title = tituloOriginal;
+        }
+
+        function toggleConfigPanel() {
+            const panel = document.getElementById('panel-configuracion');
+            if (panel) panel.classList.toggle('hidden');
+        }
+
+        function renderizarHistorialSidebar() {
+            let historial = [];
+            if (localStorage.getItem('h_historial')) historial = JSON.parse(localStorage.getItem('h_historial'));
+            
+            const txtVacio = document.getElementById('lista-historial-vacio');
+            const contenedor = document.getElementById('contenedor-items-historial');
+            if (!contenedor || !txtVacio) return;
+            
+            contenedor.innerHTML = '';
+
+            if (historial.length === 0) {
+                txtVacio.classList.remove('hidden');
+                return;
+            } else {
+                txtVacio.classList.add('hidden');
+            }
+
+            historial.forEach(sesion => {
+                let totalH = 0; let totalD = 0;
+                const tsList = sesion.tiradores || [];
+                tsList.forEach(t => {
+                    const ts = t.tiros || [];
+                    totalH += ts.length;
+                    totalD += ts.length * sesion.precioUnitario;
+                });
+
+                const item = document.createElement('div');
+                item.className = `p-2 rounded-lg text-xs border ${currentTheme === 'dark' ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'} space-y-1`;
+                item.innerHTML = `
+                    <div class="flex justify-between font-bold opacity-90">
+                        <span>📅 ${sesion.fecha.split(' ')[0]}</span>
+                        <span class="text-green-500">$${totalD.toFixed(2)}</span>
+                    </div>
+                    <div class="text-[10px] opacity-60">
+                        ${totalH} Hélices | ${sesion.tiradores.length} Tiradores
+                    </div>
+                    <button onclick="cargarSesionPasada(${sesion.id})" class="w-full mt-1 bg-blue-600/20 text-blue-400 font-bold py-1 rounded text-[10px] hover:bg-blue-600 hover:text-white transition">
+                        🔍 Cargar Serie en Pantalla
+                    </button>
+                `;
+                contenedor.appendChild(item);
+            });
+        }
+
+        function cargarSesionPasada(id) {
+            let historial = JSON.parse(localStorage.getItem('h_historial') || '[]');
+            const pasada = historial.find(s => s.id === id);
+            if (!pasada) return;
+
+            if (!confirm("¿Querés cargar esta sesión guardada en pantalla? Se guardará el progreso actual.")) return;
+
+            tiradores = pasada.tiradores;
+            precioHelice = pasada.precioUnitario;
+            document.getElementById('precio-helice').value = precioHelice;
+            idSeleccionado = null;
+            idHistorialDesplegado = null;
+            estadoApp = 'resultados';
+            
+            guardarEnLocalStorage();
+            mostrarPantallaResultados();
+            toggleConfigPanel();
+        }
+
+        function borrarTodoElHistorial() {
+            if (!confirm("¿Estás absolutamente seguro de borrar permanentemente TODO tu historial de sesiones guardadas? Esta acción no se puede deshacer.")) return;
+            localStorage.removeItem('h_historial');
+            renderizarHistorialSidebar();
+        }
+
+        function reiniciarApp() {
+            if (!confirm('¿Estás seguro de iniciar una nueva serie? Los datos de la serie activa se limpiarán (pero quedarán en tu historial de guardados).')) {
+                return;
+            }
+            localStorage.removeItem('h_tiradores');
+            localStorage.removeItem('h_estado');
+            localStorage.removeItem('h_idSel');
+            
+            tiradores = [];
+            idSeleccionado = null;
+            idHistorialDesplegado = null;
+            estadoApp = 'registro';
+            
+            document.getElementById('panel-resultados').classList.add('hidden');
+            document.getElementById('panel-registro').classList.remove('hidden');
+            document.getElementById('precio-helice').value = precioHelice;
+            document.getElementById('min-podio').value = minimoPodio;
+            
+            guardarEnLocalStorage();
+            actualizarInterfaz();
+        }
+    </script>
+</body>
+</html>
