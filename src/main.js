@@ -1534,48 +1534,76 @@ window.onload = function () {
         if (totalRec) totalRec.textContent = `$${gD.toFixed(0)}`;
       }
 
-      function prepararYImprimir(wrapperElement, titulo) {
+      async function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
 
-        // Mostrar un mensaje de carga
-        if (typeof showSnackbar === "function") {
-          showSnackbar("Generando PDF, por favor aguardá...", "info");
-        }
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-        // Asegurarnos de que esté posicionado arriba de todo (viewport 0,0) y visible
-        wrapperElement.classList.remove('hidden');
-        wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'bg-white', 'z-[9999]');
+        if (!isMobile) {
+          // --- SISTEMA DE IMPRESION NATIVO (ESCRITORIO) ---
+          const children = Array.from(document.body.children);
+          const hiddenElements = [];
+          
+          children.forEach(child => {
+            if (child !== wrapperElement && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
+              hiddenElements.push(child);
+              child.classList.add('hidden');
+            }
+          });
 
-        // Subir el scroll para que el viewport coincida con el elemento
-        window.scrollTo(0, 0);
+          wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
+          wrapperElement.classList.add('block', 'static');
 
-        // Configuración oficial de html2pdf
-        const opt = {
-          margin:       0.2,
-          filename:     titulo + '.pdf',
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
-          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
+          const tOrig = document.title;
+          document.title = titulo;
 
-        // Esperar a que el navegador dibuje (paint) la tabla en el viewport
-        setTimeout(async () => {
-          try {
-            await html2pdf().set(opt).from(wrapperElement).save();
+          // Esperar 100ms para renderizar y abrir la ventana de impresión clásica
+          setTimeout(() => {
+            window.print();
             
-            if (typeof showSnackbar === "function") {
-              showSnackbar("¡PDF descargado con éxito!", "success");
-            }
-          } catch (error) {
-            console.error("Error al generar el PDF:", error);
-            if (typeof mostrarAlerta === "function") {
-              mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
-            }
-          } finally {
-            // Volver a ocultar el contenedor
-            wrapperElement.classList.add('hidden');
+            // Restaurar DOM
+            document.title = tOrig;
+            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
+            wrapperElement.classList.remove('block', 'static');
+            hiddenElements.forEach(child => child.classList.remove('hidden'));
+          }, 100);
+
+        } else {
+          // --- SISTEMA HTML2PDF (CELULARES) ---
+          if (typeof showSnackbar === "function") {
+            showSnackbar("Generando PDF, por favor aguardá...", "info");
           }
-        }, 500); // 500ms para asegurar el repintado en celulares lentos
+
+          wrapperElement.classList.remove('hidden');
+          wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'bg-white', 'z-[9999]');
+
+          window.scrollTo(0, 0);
+
+          const opt = {
+            margin:       0.2,
+            filename:     titulo + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+          };
+
+          setTimeout(async () => {
+            try {
+              await html2pdf().set(opt).from(wrapperElement).save();
+              
+              if (typeof showSnackbar === "function") {
+                showSnackbar("¡PDF descargado con éxito!", "success");
+              }
+            } catch (error) {
+              console.error("Error al generar el PDF:", error);
+              if (typeof mostrarAlerta === "function") {
+                mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
+              }
+            } finally {
+              wrapperElement.classList.add('hidden');
+            }
+          }, 500);
+        }
       }
 
       function imprimirConSistemaNativo() {
