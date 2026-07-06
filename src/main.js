@@ -1,5 +1,11 @@
 import './style.css';
 import Chart from 'chart.js/auto';
+import { supabase } from './supabase.js';
+
+// Auth State
+let authUser = null;
+let isRegistering = false;
+
 
 // UX State
 let enableVibration = true;
@@ -150,6 +156,7 @@ function showSnackbar(mensaje) {
         };
       }
 
+
       function mostrarPrompt(mensaje, valorInicial, callback) {
         document.getElementById("modal-generico").classList.remove("hidden");
         document.getElementById("modal-titulo").textContent = "Ingresar dato";
@@ -197,7 +204,26 @@ function showSnackbar(mensaje) {
         }
       }
 
-      window.onload = function () {
+      
+window.restaurarEstadoDOM = function() {
+  if (estadoApp === "inicio") {
+    mostrarPantallaInicio();
+  } else if (estadoApp === "resultados") {
+    document.getElementById("pantalla-inicio").classList.add("hidden");
+    document.getElementById("pantalla-inicio").classList.remove("flex");
+    document.getElementById("pantalla-principal").classList.remove("hidden");
+    mostrarPantallaResultados();
+  } else {
+    document.getElementById("pantalla-inicio").classList.add("hidden");
+    document.getElementById("pantalla-inicio").classList.remove("flex");
+    document.getElementById("pantalla-principal").classList.remove("hidden");
+    actualizarInterfaz();
+    const sb = document.getElementById('snackbar-undo');
+    if(sb) sb.classList.add('translate-y-24', 'opacity-0');
+  }
+}
+
+window.onload = function () {
         try {
           if (localStorage.getItem("h_tiradores"))
             tiradores = JSON.parse(localStorage.getItem("h_tiradores")) || [];
@@ -265,22 +291,23 @@ function showSnackbar(mensaje) {
 
           aplicarTema(currentTheme, false);
           
-          if (estadoApp === "inicio") {
-            mostrarPantallaInicio();
-          } else if (estadoApp === "resultados") {
-            document.getElementById("pantalla-inicio").classList.add("hidden");
-            document.getElementById("pantalla-inicio").classList.remove("flex");
-            document.getElementById("pantalla-principal").classList.remove("hidden");
-            mostrarPantallaResultados();
-          } else {
-            document.getElementById("pantalla-inicio").classList.add("hidden");
-            document.getElementById("pantalla-inicio").classList.remove("flex");
-            document.getElementById("pantalla-principal").classList.remove("hidden");
-            actualizarInterfaz();
-            const sb = document.getElementById('snackbar-undo');
-            if(sb) sb.classList.add('translate-y-24', 'opacity-0');
-          }
-          renderizarHistorialSidebar();
+          // Setup auth event listeners here since DOM is loaded
+          const form = document.getElementById('form-auth');
+          if (form) form.addEventListener('submit', handleAuth);
+          
+          const toggleBtn = document.getElementById('btn-toggle-auth');
+          if (toggleBtn) toggleBtn.addEventListener('click', toggleAuthMode);
+          
+          // Auto-sync when internet connection is restored
+          window.addEventListener('online', () => {
+            if (authUser) {
+              console.log('Conexión restaurada. Sincronizando datos pendientes...');
+              showSnackbar('🌐 Conexión restaurada. Sincronizando...');
+              syncCloudData();
+            }
+          });
+
+          initAuth(); // This will eventually call restaurarEstadoDOM
         } catch (e) {
           localStorage.clear();
           tiradores = [];
@@ -578,7 +605,7 @@ function showSnackbar(mensaje) {
 
         const mLine = document.getElementById("pdf-ind-multi-linea");
         if (cantMulti > 0) {
-          mLine.style.display = "block";
+          mLine.style.display = "table-row";
           document.getElementById("pdf-ind-cant-multi").textContent = cantMulti;
           document.getElementById("pdf-ind-unit-multi").textContent =
             precioHelice.toFixed(0);
@@ -955,7 +982,9 @@ function showSnackbar(mensaje) {
         lista.innerHTML = "";
         const visibles = tiradores.filter((x) => !x.esGrupo);
         if (visibles.length === 0) {
-          lista.innerHTML = `<div class="text-center text-xs text-gray-500 py-4">No hay tiradores anotados.</div>`;
+          lista.innerHTML = `<div id="lista-vacia-estado" class="absolute inset-0 flex flex-col items-center justify-center text-center p-2 opacity-60">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Pedana vacía</p>
+            </div>`;
         }
         visibles.forEach((t) => {
           const s = obtenerEstadisticas(t);
@@ -1422,7 +1451,7 @@ function showSnackbar(mensaje) {
       function armarEstructuraDatosPDF() {
         const fechaEl = document.getElementById("pdf-fecha");
         if (fechaEl)
-          fechaEl.textContent = `Generado el: ${new Date().toLocaleDateString("es-AR")}`;
+          fechaEl.textContent = `Fecha: ${new Date().toLocaleDateString("es-AR")}`;
         document.getElementById("pdf-titulo-tabla").textContent =
           criterioOrden === "porcentaje"
             ? "Clasificación General - Por Porcentaje"
@@ -1454,9 +1483,17 @@ function showSnackbar(mensaje) {
                 : `${s.pegados} P`,
             mV = t.esGrupo ? "Grupal" : `$${s.costoTotal.toFixed(0)}`;
           const fila = document.createElement("tr");
-          fila.style.borderBottom = "1px solid #e5e7eb";
-          fila.style.backgroundColor = idx % 2 === 0 ? "#ffffff" : "#f9fafb";
-          fila.innerHTML = `<td style="padding: 12px 16px; font-weight: 600;">${t.nombre}</td><td style="padding: 12px 16px; text-align: center;">${s.total}</td><td style="padding: 12px 16px; text-align: center; color: #15803d; font-weight: bold;">${s.pegados}</td><td style="padding: 12px 16px; text-align: center; color: #b91c1c; font-weight: bold;">${s.errados}</td><td style="padding: 12px 16px; text-align: center;">${cP}</td><td style="padding: 12px 16px; text-align: right; font-weight: bold;">${mV}</td>`;
+          fila.style.cssText = "page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; font-size: 14px;";
+          fila.style.backgroundColor = idx % 2 === 0 ? "#ffffff" : "#f8fafc";
+          
+          fila.innerHTML = `
+            <td style="padding: 14px 20px; font-weight: 700; color: #1e293b;">${t.nombre}</td>
+            <td style="padding: 14px 20px; text-align: center; color: #475569;">${s.total}</td>
+            <td style="padding: 14px 20px; text-align: center; color: #16a34a; font-weight: 800;">${s.pegados}</td>
+            <td style="padding: 14px 20px; text-align: center; color: #dc2626; font-weight: 800;">${s.errados}</td>
+            <td style="padding: 14px 20px; text-align: center; color: #0f172a; font-weight: 700;">${cP}</td>
+            <td style="padding: 14px 20px; text-align: right; color: #1e3a8a; font-weight: 900;">${mV}</td>
+          `;
           pTabla.appendChild(fila);
         });
 
@@ -1478,34 +1515,35 @@ function showSnackbar(mensaje) {
             }
           });
 
-        const seccionGrupos = document.getElementById("pdf-seccion-grupos");
-        const tbodyGrupos = document.getElementById("pdf-tabla-grupos-cuerpo");
-        if (seccionGrupos && tbodyGrupos) {
-          if (grupos.length > 0) {
-            seccionGrupos.style.display = "block";
-            tbodyGrupos.innerHTML = "";
-            grupos.forEach((g, idx) => {
-              const s = obtenerEstadisticas(g);
-              const cP =
-                criterioOrden === "porcentaje"
-                  ? `${s.efectividad}%`
-                  : `${s.pegados} P`;
-              const fila = document.createElement("tr");
-              fila.style.borderBottom = "1px solid #e5e7eb";
-              fila.style.backgroundColor =
-                idx % 2 === 0 ? "#ffffff" : "#f9fafb";
-              fila.innerHTML = `<td style="padding: 12px 16px; font-weight: 600;">${g.nombre}</td><td style="padding: 12px 16px; text-align: center;">${s.total}</td><td style="padding: 12px 16px; text-align: center; color: #15803d; font-weight: bold;">${s.pegados}</td><td style="padding: 12px 16px; text-align: center; color: #b91c1c; font-weight: bold;">${s.errados}</td><td style="padding: 12px 16px; text-align: center;">${cP}</td>`;
-              tbodyGrupos.appendChild(fila);
-            });
-          } else {
-            seccionGrupos.style.display = "none";
-          }
+        if (grupos.length > 0) {
+          const separador = document.createElement("tr");
+          separador.innerHTML = `<td colspan="6" style="background-color: #1e3a8a; color: white; padding: 10px 20px; font-weight: 700; font-size: 12px; text-transform: uppercase;">Clasificación de Grupos / Equipos</td>`;
+          pTabla.appendChild(separador);
+          
+          grupos.forEach((g, idx) => {
+            const s = obtenerEstadisticas(g);
+            const cP =
+              criterioOrden === "porcentaje"
+                ? `${s.efectividad}%`
+                : `${s.pegados} P`;
+            const fila = document.createElement("tr");
+            fila.style.cssText = "page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; font-size: 14px;";
+            fila.style.backgroundColor = idx % 2 === 0 ? "#ffffff" : "#f8fafc";
+            
+            fila.innerHTML = `
+              <td style="padding: 14px 20px; font-weight: 700; color: #b45309;">${g.nombre} (G)</td>
+              <td style="padding: 14px 20px; text-align: center; color: #475569;">${s.total}</td>
+              <td style="padding: 14px 20px; text-align: center; color: #16a34a; font-weight: 800;">${s.pegados}</td>
+              <td style="padding: 14px 20px; text-align: center; color: #dc2626; font-weight: 800;">${s.errados}</td>
+              <td style="padding: 14px 20px; text-align: center; color: #0f172a; font-weight: 700;">${cP}</td>
+              <td style="padding: 14px 20px; text-align: right; color: #b45309; font-weight: 900;">Grupal</td>
+            `;
+            pTabla.appendChild(fila);
+          });
         }
 
-        document.getElementById("pdf-valor-unitario").textContent =
-          precioHelice.toFixed(0);
-        document.getElementById("pdf-total-helices").textContent = gH;
-        document.getElementById("pdf-total-dinero").textContent = gD.toFixed(0);
+        const totalRec = document.getElementById("pdf-total-recaudado");
+        if (totalRec) totalRec.textContent = `$${gD.toFixed(0)}`;
       }
 
       function imprimirConSistemaNativo() {
@@ -1783,3 +1821,119 @@ window.showSnackbar = showSnackbar;
 window.exportarDatos = exportarDatos;
 window.importarDatos = importarDatos;
 
+
+
+// --- AUTH LOGIC ---
+async function initAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    authUser = session.user;
+    hideAuthScreen();
+    window.restaurarEstadoDOM();
+    await fetchCloudData();
+  } else {
+    document.getElementById('pantalla-inicio').classList.add('hidden');
+    document.getElementById('pantalla-auth').classList.remove('hidden');
+  }
+
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (session) {
+      authUser = session.user;
+      hideAuthScreen();
+    window.restaurarEstadoDOM();
+      await fetchCloudData();
+    } else {
+      authUser = null;
+      document.getElementById('pantalla-inicio').classList.add('hidden');
+      document.getElementById('pantalla-auth').classList.remove('hidden');
+    }
+  });
+}
+
+// Remove duplicate function. Auth login will now just call original mostrarPantallaInicio.
+function hideAuthScreen() {
+  document.getElementById('pantalla-auth').classList.add('hidden');
+}
+
+async function handleAuth(e) {
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value;
+  const password = document.getElementById('auth-password').value;
+  
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Cargando...';
+
+  try {
+    if (isRegistering) {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      
+      // If email confirmation is required, session will be null
+      if (data.user && data.user.identities && data.user.identities.length > 0 && !data.session) {
+        mostrarAlerta('¡Registro exitoso! Por favor, revisa tu correo electrónico para confirmar tu cuenta antes de ingresar.');
+      } else {
+        mostrarAlerta('¡Registro exitoso! Ya puedes ingresar.');
+      }
+      
+      isRegistering = false;
+      document.getElementById('btn-toggle-auth').textContent = 'Registrate';
+      btn.textContent = 'Ingresar';
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      // onAuthStateChange will handle UI
+    }
+  } catch (error) {
+    mostrarAlerta(error.message);
+    btn.textContent = isRegistering ? 'Crear Cuenta' : 'Ingresar';
+  }
+  btn.disabled = false;
+}
+
+window.toggleAuthMode = function() {
+  isRegistering = !isRegistering;
+  const btn = document.getElementById('btn-login');
+  const toggleBtn = document.getElementById('btn-toggle-auth');
+  
+  if (isRegistering) {
+    btn.textContent = 'Crear Cuenta';
+    toggleBtn.textContent = 'Ingresar';
+  } else {
+    btn.textContent = 'Ingresar';
+    toggleBtn.textContent = 'Registrate';
+  }
+}
+
+async function fetchCloudData() {
+  if (!authUser) return;
+  // TODO: Fetch from supabase and update localStorage if newer
+}
+
+async function syncCloudData() {
+  if (!authUser) return;
+  try {
+    // We can just dump the backup JSON for simplicity for now
+    const backupData = {
+      h_historial: localStorage.getItem("h_historial") || "[]",
+      h_base_tiradores: localStorage.getItem("h_base_tiradores") || "[]"
+    };
+    
+    // Instead of using real tables right away without knowing user schema, 
+    // let's create a 'user_backups' table conceptually.
+    // For now, we will just log it since we need to create the table in Supabase first.
+    console.log("Syncing to cloud...", backupData);
+    
+    const { error } = await supabase
+      .from('user_backups')
+      .upsert({ user_id: authUser.id, backup_json: backupData });
+      
+    if (error) console.error("Error syncing:", error);
+    else console.log("Synced successfully.");
+  } catch(e) {
+    console.error("Sync error:", e);
+  }
+}
+
+
+// --- END AUTH LOGIC ---
