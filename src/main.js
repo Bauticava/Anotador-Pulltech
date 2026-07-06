@@ -642,17 +642,26 @@ window.onload = function () {
         const wG = document.getElementById("wrapper-pdf");
         const wI = document.getElementById("wrapper-individual-pdf");
 
-        wG.classList.remove("printing");
-        wI.classList.add("printing");
+        if(wG) {
+          wG.classList.remove("printing");
+          wG.classList.add("hidden");
+        }
+        if(wI) {
+          wI.classList.add("printing");
+          wI.classList.remove("hidden");
+        }
 
         setTimeout(() => {
           const tOrig = document.title;
           document.title = `Reporte Individual - ${t.nombre}`;
           window.print();
           document.title = tOrig;
-
-          wI.classList.remove("printing");
-        }, 100);
+          if(wI) {
+            wI.classList.remove("printing");
+            wI.classList.add("hidden");
+          }
+          if(wG) wG.classList.remove("hidden");
+        }, 300);
       }
 
       function manejarSeleccionMultiMode(id) {
@@ -700,10 +709,6 @@ window.onload = function () {
       function abrirModalBaseTiradores() {
         renderizarBaseTiradores();
         document.getElementById("modal-base-tiradores").classList.remove("hidden");
-        setTimeout(() => {
-          const input = document.getElementById("nombre-tirador");
-          if (input) input.focus();
-        }, 50);
       }
 
       function cerrarModalBaseTiradores() {
@@ -1549,8 +1554,14 @@ window.onload = function () {
       function imprimirConSistemaNativo() {
         const wG = document.getElementById("wrapper-pdf");
         const wI = document.getElementById("wrapper-individual-pdf");
-        if (wI) wI.classList.remove("printing");
-        if (wG) wG.classList.add("printing");
+        if (wI) {
+          wI.classList.remove("printing");
+          wI.classList.add("hidden");
+        }
+        if (wG) {
+          wG.classList.add("printing");
+          wG.classList.remove("hidden");
+        }
         armarEstructuraDatosPDF();
 
         // Timeout to allow DOM to render before opening print dialog
@@ -1559,8 +1570,11 @@ window.onload = function () {
           document.title = `Sesion de Tiro - ${new Date().toLocaleDateString("es-AR").replace(/\//g, "-")}`;
           window.print();
           document.title = tOrig;
-          if (wG) wG.classList.remove("printing");
-        }, 100);
+          if (wG) {
+            wG.classList.remove("printing");
+            wG.classList.add("hidden");
+          }
+        }, 300);
       }
 
       function renderizarHistorialPantalla() {
