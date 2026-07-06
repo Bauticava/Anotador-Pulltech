@@ -679,6 +679,7 @@ window.onload = function () {
         if (!baseTiradores.includes(n)) {
           baseTiradores.push(n);
           localStorage.setItem("h_base_tiradores", JSON.stringify(baseTiradores));
+          syncCloudData();
         }
 
         if (nombreManual === null) i.value = "";
@@ -729,6 +730,7 @@ window.onload = function () {
         event.stopPropagation();
         baseTiradores = baseTiradores.filter(n => n !== nombre);
         localStorage.setItem("h_base_tiradores", JSON.stringify(baseTiradores));
+        syncCloudData();
         renderizarBaseTiradores();
       }
       function editarTirador(id, event) {
@@ -1212,6 +1214,7 @@ window.onload = function () {
               tiradores: JSON.parse(JSON.stringify(tiradores)),
             });
             localStorage.setItem("h_historial", JSON.stringify(hist));
+            syncCloudData();
             
             // Clean up the active session
             tiradores = [];
@@ -1688,6 +1691,7 @@ window.onload = function () {
         if (nuevoNombre !== null && nuevoNombre.trim() !== "") {
           h[idx].nombrePersonalizado = nuevoNombre.trim();
           localStorage.setItem("h_historial", JSON.stringify(h));
+          syncCloudData();
           renderizarHistorialPantalla();
           showSnackbar("✅ Sesión renombrada");
         }
@@ -1700,6 +1704,7 @@ window.onload = function () {
             let h = JSON.parse(localStorage.getItem("h_historial") || "[]");
             h = h.filter((x) => x.id !== id);
             localStorage.setItem("h_historial", JSON.stringify(h));
+            syncCloudData();
             renderizarHistorialPantalla();
           },
           true,
@@ -1735,6 +1740,7 @@ window.onload = function () {
           "⚠️ ¿Borrar todo el historial?",
           () => {
             localStorage.removeItem("h_historial");
+            syncCloudData();
             renderizarHistorialPantalla();
           },
           true,
@@ -1816,6 +1822,7 @@ window.onload = function () {
             if (contenido.h_base_tiradores) {
               localStorage.setItem("h_base_tiradores", contenido.h_base_tiradores);
             }
+            syncCloudData();
             
             alert("✅ Datos restaurados con éxito. La aplicación se reiniciará.");
             window.location.reload();
@@ -1959,29 +1966,57 @@ window.toggleAuthMode = function() {
 
 async function fetchCloudData() {
   if (!authUser) return;
-  // TODO: Fetch from supabase and update localStorage if newer
+  try {
+    const { data, error } = await supabase
+      .from('user_backups')
+      .select('backup_json')
+      .eq('user_id', authUser.id)
+      .single();
+      
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is 'not found'
+    if (data && data.backup_json) {
+      const cloudData = data.backup_json;
+      
+      // Merge base_tiradores (Array of Strings)
+      let localBase = JSON.parse(localStorage.getItem("h_base_tiradores") || "[]");
+      let cloudBase = JSON.parse(cloudData.h_base_tiradores || "[]");
+      let mergedBase = [...new Set([...localBase, ...cloudBase])];
+      localStorage.setItem("h_base_tiradores", JSON.stringify(mergedBase));
+      baseTiradores = mergedBase;
+      
+      // Merge historial (Array of Objects with id)
+      let localHist = JSON.parse(localStorage.getItem("h_historial") || "[]");
+      let cloudHist = JSON.parse(cloudData.h_historial || "[]");
+      
+      let histMap = new Map();
+      // Add cloud first
+      cloudHist.forEach(item => histMap.set(item.id, item));
+      // Overwrite/Add local (local usually is newer if it exists and differs, but id is timestamp so they are unique)
+      localHist.forEach(item => histMap.set(item.id, item));
+      
+      let mergedHist = Array.from(histMap.values()).sort((a, b) => b.id - a.id);
+      localStorage.setItem("h_historial", JSON.stringify(mergedHist));
+      
+      actualizarInterfaz();
+    }
+  } catch (e) {
+    console.error("Error fetching cloud data:", e);
+  }
 }
 
 async function syncCloudData() {
   if (!authUser) return;
   try {
-    // We can just dump the backup JSON for simplicity for now
     const backupData = {
       h_historial: localStorage.getItem("h_historial") || "[]",
       h_base_tiradores: localStorage.getItem("h_base_tiradores") || "[]"
     };
-    
-    // Instead of using real tables right away without knowing user schema, 
-    // let's create a 'user_backups' table conceptually.
-    // For now, we will just log it since we need to create the table in Supabase first.
-    console.log("Syncing to cloud...", backupData);
     
     const { error } = await supabase
       .from('user_backups')
       .upsert({ user_id: authUser.id, backup_json: backupData });
       
     if (error) console.error("Error syncing:", error);
-    else console.log("Synced successfully.");
   } catch(e) {
     console.error("Sync error:", e);
   }
