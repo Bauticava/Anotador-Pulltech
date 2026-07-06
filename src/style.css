@@ -51,6 +51,7 @@ body.theme-light {
 }
 
 @media print {
+  .no-print { display: none !important; }
   @page {
     size: auto;
     margin: 10mm;

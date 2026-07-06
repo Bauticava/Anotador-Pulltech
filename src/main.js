@@ -1537,12 +1537,24 @@ window.onload = function () {
       function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
         
+        // Add a manual close button to the wrapper if it doesn't exist yet
+        if (!document.getElementById("btn-cerrar-impresion")) {
+          const btn = document.createElement("button");
+          btn.id = "btn-cerrar-impresion";
+          btn.className = "no-print fixed top-4 right-4 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg z-[10000]";
+          btn.textContent = "Volver a la App";
+          document.body.appendChild(btn); // Append to body so it floats above everything
+        }
+        
+        const btnCerrar = document.getElementById("btn-cerrar-impresion");
+        btnCerrar.style.display = "block"; // Show the button
+
         const children = Array.from(document.body.children);
         const hiddenElements = [];
         
         // Hide everything else to force the browser to treat wrapper as the only content
         children.forEach(child => {
-          if (child !== wrapperElement && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
+          if (child !== wrapperElement && child !== btnCerrar && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
             hiddenElements.push(child);
             child.classList.add('hidden');
           }
@@ -1552,17 +1564,29 @@ window.onload = function () {
         wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
         wrapperElement.classList.add('block', 'static');
 
-        setTimeout(() => {
-          const tOrig = document.title;
-          document.title = titulo;
-          window.print();
-          document.title = tOrig;
+        const tOrig = document.title;
+        document.title = titulo;
 
-          // Restore
+        // The restore function
+        const restoreDOM = () => {
+          document.title = tOrig;
           wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
           wrapperElement.classList.remove('block', 'static');
           hiddenElements.forEach(child => child.classList.remove('hidden'));
-        }, 300);
+          btnCerrar.style.display = "none";
+          window.removeEventListener('afterprint', restoreDOM);
+        };
+
+        // If the user clicks the manual return button
+        btnCerrar.onclick = restoreDOM;
+
+        // Listen for the OS print dialog closing
+        window.addEventListener('afterprint', restoreDOM);
+
+        // Give the browser time to paint the visible layout, then print
+        setTimeout(() => {
+          window.print();
+        }, 500);
       }
 
       function imprimirConSistemaNativo() {
