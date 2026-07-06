@@ -1542,11 +1542,11 @@ window.onload = function () {
           showSnackbar("Generando PDF, por favor aguardá...", "info");
         }
 
-        // Desocultar el contenedor y cambiar a posicionamiento estático
-        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
-        wrapperElement.classList.add('block', 'static');
+        // Asegurarnos de que esté posicionado arriba de todo (viewport 0,0) y visible
+        wrapperElement.classList.remove('hidden');
+        wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'bg-white', 'z-[9999]');
 
-        // Para evitar que html2canvas capture en blanco si hay scroll
+        // Subir el scroll para que el viewport coincida con el elemento
         window.scrollTo(0, 0);
 
         // Configuración oficial de html2pdf
@@ -1558,7 +1558,7 @@ window.onload = function () {
           jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
 
-        // Esperar a que el navegador dibuje (paint) la tabla antes de capturar
+        // Esperar a que el navegador dibuje (paint) la tabla en el viewport
         setTimeout(async () => {
           try {
             await html2pdf().set(opt).from(wrapperElement).save();
@@ -1572,11 +1572,10 @@ window.onload = function () {
               mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
             }
           } finally {
-            // Volver a ocultar y restaurar clases
-            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
-            wrapperElement.classList.remove('block', 'static');
+            // Volver a ocultar el contenedor
+            wrapperElement.classList.add('hidden');
           }
-        }, 250);
+        }, 500); // 500ms para asegurar el repintado en celulares lentos
       }
 
       function imprimirConSistemaNativo() {
