@@ -1888,10 +1888,15 @@ async function initAuth() {
   if (session) {
     authUser = session.user;
     hideAuthScreen();
+    document.getElementById('main-header').classList.remove('hidden');
     window.restaurarEstadoDOM();
     await fetchCloudData();
   } else {
+    document.getElementById('main-header').classList.add('hidden');
     document.getElementById('pantalla-inicio').classList.add('hidden');
+    document.getElementById('pantalla-configuracion').classList.add('hidden');
+    document.getElementById('pantalla-historial').classList.add('hidden');
+    document.getElementById('pantalla-principal').classList.add('hidden');
     document.getElementById('pantalla-auth').classList.remove('hidden');
   }
 
@@ -1899,11 +1904,16 @@ async function initAuth() {
     if (session) {
       authUser = session.user;
       hideAuthScreen();
-    window.restaurarEstadoDOM();
+      document.getElementById('main-header').classList.remove('hidden');
+      window.restaurarEstadoDOM();
       await fetchCloudData();
     } else {
       authUser = null;
+      document.getElementById('main-header').classList.add('hidden');
       document.getElementById('pantalla-inicio').classList.add('hidden');
+      document.getElementById('pantalla-configuracion').classList.add('hidden');
+      document.getElementById('pantalla-historial').classList.add('hidden');
+      document.getElementById('pantalla-principal').classList.add('hidden');
       document.getElementById('pantalla-auth').classList.remove('hidden');
     }
   });
@@ -1965,12 +1975,14 @@ window.toggleAuthMode = function() {
 }
 
 window.cerrarSesion = async function() {
+  // Ocultar modal de ajustes sin animaciones raras ni cambiar estadoApp todavía
+  document.getElementById("pantalla-configuracion").classList.add("hidden");
+  
   const { error } = await supabase.auth.signOut();
   if (error) {
     console.error("Error signing out:", error);
     if (typeof mostrarAlerta === "function") mostrarAlerta("Error al cerrar sesión.");
   } else {
-    cerrarPantallaConfiguracion();
     // onAuthStateChange automatically handles showing the auth screen
   }
 }
