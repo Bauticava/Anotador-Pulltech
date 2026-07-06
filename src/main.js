@@ -1964,6 +1964,17 @@ window.toggleAuthMode = function() {
   }
 }
 
+window.cerrarSesion = async function() {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error("Error signing out:", error);
+    if (typeof mostrarAlerta === "function") mostrarAlerta("Error al cerrar sesión.");
+  } else {
+    cerrarPantallaConfiguracion();
+    // onAuthStateChange automatically handles showing the auth screen
+  }
+}
+
 async function fetchCloudData() {
   if (!authUser) return;
   try {
