@@ -1534,59 +1534,42 @@ window.onload = function () {
         if (totalRec) totalRec.textContent = `$${gD.toFixed(0)}`;
       }
 
-      function prepararYImprimir(wrapperElement, titulo) {
+      async function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
-        
-        // Add a manual close button to the wrapper if it doesn't exist yet
-        if (!document.getElementById("btn-cerrar-impresion")) {
-          const btn = document.createElement("button");
-          btn.id = "btn-cerrar-impresion";
-          btn.className = "no-print fixed top-4 right-4 bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg z-[10000]";
-          btn.textContent = "Volver a la App";
-          document.body.appendChild(btn); // Append to body so it floats above everything
+
+        // Mostrar un mensaje de carga
+        if (typeof showSnackbar === "function") {
+          showSnackbar("Generando PDF, por favor aguardá...", "info");
         }
-        
-        const btnCerrar = document.getElementById("btn-cerrar-impresion");
-        btnCerrar.style.display = "block"; // Show the button
 
-        const children = Array.from(document.body.children);
-        const hiddenElements = [];
-        
-        // Hide everything else to force the browser to treat wrapper as the only content
-        children.forEach(child => {
-          if (child !== wrapperElement && child !== btnCerrar && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
-            hiddenElements.push(child);
-            child.classList.add('hidden');
-          }
-        });
+        // Desocultar el contenedor para que la librería pueda leerlo
+        wrapperElement.classList.remove('hidden');
 
-        // Make wrapper flow normally
-        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
-        wrapperElement.classList.add('block', 'static');
-
-        const tOrig = document.title;
-        document.title = titulo;
-
-        // The restore function
-        const restoreDOM = () => {
-          document.title = tOrig;
-          wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
-          wrapperElement.classList.remove('block', 'static');
-          hiddenElements.forEach(child => child.classList.remove('hidden'));
-          btnCerrar.style.display = "none";
-          window.removeEventListener('afterprint', restoreDOM);
+        // Configuración oficial de html2pdf
+        const opt = {
+          margin:       0.2,
+          filename:     titulo + '.pdf',
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
 
-        // If the user clicks the manual return button
-        btnCerrar.onclick = restoreDOM;
-
-        // Listen for the OS print dialog closing
-        window.addEventListener('afterprint', restoreDOM);
-
-        // Give the browser time to paint the visible layout, then print
-        setTimeout(() => {
-          window.print();
-        }, 500);
+        try {
+          // Iniciar el renderizado y forzar la descarga del PDF
+          await html2pdf().set(opt).from(wrapperElement).save();
+          
+          if (typeof showSnackbar === "function") {
+            showSnackbar("¡PDF descargado con éxito!", "success");
+          }
+        } catch (error) {
+          console.error("Error al generar el PDF:", error);
+          if (typeof mostrarAlerta === "function") {
+            mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
+          }
+        } finally {
+          // Volver a ocultar la vista del reporte
+          wrapperElement.classList.add('hidden');
+        }
       }
 
       function imprimirConSistemaNativo() {
