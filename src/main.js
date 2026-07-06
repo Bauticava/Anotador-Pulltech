@@ -1534,7 +1534,7 @@ window.onload = function () {
         if (totalRec) totalRec.textContent = `$${gD.toFixed(0)}`;
       }
 
-      async function prepararYImprimir(wrapperElement, titulo) {
+      function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
 
         // Mostrar un mensaje de carga
@@ -1542,34 +1542,41 @@ window.onload = function () {
           showSnackbar("Generando PDF, por favor aguardá...", "info");
         }
 
-        // Desocultar el contenedor para que la librería pueda leerlo
-        wrapperElement.classList.remove('hidden');
+        // Desocultar el contenedor y cambiar a posicionamiento estático
+        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
+        wrapperElement.classList.add('block', 'static');
+
+        // Para evitar que html2canvas capture en blanco si hay scroll
+        window.scrollTo(0, 0);
 
         // Configuración oficial de html2pdf
         const opt = {
           margin:       0.2,
           filename:     titulo + '.pdf',
           image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
           jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
 
-        try {
-          // Iniciar el renderizado y forzar la descarga del PDF
-          await html2pdf().set(opt).from(wrapperElement).save();
-          
-          if (typeof showSnackbar === "function") {
-            showSnackbar("¡PDF descargado con éxito!", "success");
+        // Esperar a que el navegador dibuje (paint) la tabla antes de capturar
+        setTimeout(async () => {
+          try {
+            await html2pdf().set(opt).from(wrapperElement).save();
+            
+            if (typeof showSnackbar === "function") {
+              showSnackbar("¡PDF descargado con éxito!", "success");
+            }
+          } catch (error) {
+            console.error("Error al generar el PDF:", error);
+            if (typeof mostrarAlerta === "function") {
+              mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
+            }
+          } finally {
+            // Volver a ocultar y restaurar clases
+            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
+            wrapperElement.classList.remove('block', 'static');
           }
-        } catch (error) {
-          console.error("Error al generar el PDF:", error);
-          if (typeof mostrarAlerta === "function") {
-            mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
-          }
-        } finally {
-          // Volver a ocultar la vista del reporte
-          wrapperElement.classList.add('hidden');
-        }
+        }, 250);
       }
 
       function imprimirConSistemaNativo() {
