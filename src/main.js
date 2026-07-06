@@ -642,26 +642,9 @@ window.onload = function () {
         const wG = document.getElementById("wrapper-pdf");
         const wI = document.getElementById("wrapper-individual-pdf");
 
-        if(wG) {
-          wG.classList.remove("printing");
-          wG.classList.add("hidden");
-        }
-        if(wI) {
-          wI.classList.add("printing");
-          wI.classList.remove("hidden");
-        }
-
-        setTimeout(() => {
-          const tOrig = document.title;
-          document.title = `Reporte Individual - ${t.nombre}`;
-          window.print();
-          document.title = tOrig;
-          if(wI) {
-            wI.classList.remove("printing");
-            wI.classList.add("hidden");
-          }
-          if(wG) wG.classList.remove("hidden");
-        }, 300);
+        if(wG) wG.classList.add("hidden");
+        
+        prepararYImprimir(wI, `Reporte Individual - ${t.nombre}`);
       }
 
       function manejarSeleccionMultiMode(id) {
@@ -1551,30 +1534,44 @@ window.onload = function () {
         if (totalRec) totalRec.textContent = `$${gD.toFixed(0)}`;
       }
 
+      function prepararYImprimir(wrapperElement, titulo) {
+        if (!wrapperElement) return;
+        
+        const children = Array.from(document.body.children);
+        const hiddenElements = [];
+        
+        // Hide everything else to force the browser to treat wrapper as the only content
+        children.forEach(child => {
+          if (child !== wrapperElement && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
+            hiddenElements.push(child);
+            child.classList.add('hidden');
+          }
+        });
+
+        // Make wrapper flow normally
+        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
+        wrapperElement.classList.add('block', 'static');
+
+        setTimeout(() => {
+          const tOrig = document.title;
+          document.title = titulo;
+          window.print();
+          document.title = tOrig;
+
+          // Restore
+          wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
+          wrapperElement.classList.remove('block', 'static');
+          hiddenElements.forEach(child => child.classList.remove('hidden'));
+        }, 300);
+      }
+
       function imprimirConSistemaNativo() {
         const wG = document.getElementById("wrapper-pdf");
         const wI = document.getElementById("wrapper-individual-pdf");
-        if (wI) {
-          wI.classList.remove("printing");
-          wI.classList.add("hidden");
-        }
-        if (wG) {
-          wG.classList.add("printing");
-          wG.classList.remove("hidden");
-        }
+        if (wI) wI.classList.add("hidden");
+        
         armarEstructuraDatosPDF();
-
-        // Timeout to allow DOM to render before opening print dialog
-        setTimeout(() => {
-          const tOrig = document.title;
-          document.title = `Sesion de Tiro - ${new Date().toLocaleDateString("es-AR").replace(/\//g, "-")}`;
-          window.print();
-          document.title = tOrig;
-          if (wG) {
-            wG.classList.remove("printing");
-            wG.classList.add("hidden");
-          }
-        }, 300);
+        prepararYImprimir(wG, `Sesion de Tiro - ${new Date().toLocaleDateString("es-AR").replace(/\//g, "-")}`);
       }
 
       function renderizarHistorialPantalla() {
