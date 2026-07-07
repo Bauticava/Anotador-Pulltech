@@ -1542,75 +1542,25 @@ window.onload = function () {
       async function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        // --- PREPARAR DOM PARA IMPRESIÓN/CAPTURA ---
-        const children = Array.from(document.body.children);
-        const hiddenElements = [];
-        
-        children.forEach(child => {
-          if (child !== wrapperElement && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
-            hiddenElements.push(child);
-            child.classList.add('hidden');
-          }
-        });
-
-        // Convertir a block y forzar ancho de 800px para que los PDFs mantengan formato A4
-        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
-        wrapperElement.classList.add('block', 'static', 'w-[800px]', 'mx-auto');
+        // Utilizamos el sistema nativo de impresión del navegador para ambas plataformas.
+        // Esto garantiza un PDF vectorial, con texto seleccionable, bajo peso en KB,
+        // y elimina los bugs de PDF en blanco que ocurren por problemas de memoria de html2canvas en celulares.
+        // Además, soluciona el problema de impresión en computadoras utilizando la clase '.printing'.
 
         const tOrig = document.title;
         document.title = titulo;
 
-        window.scrollTo(0, 0);
+        // Añadimos la clase printing para que el CSS @media print muestre este wrapper y oculte el resto
+        wrapperElement.classList.add('printing');
 
-        if (!isMobile) {
-          // --- SISTEMA NATIVO (COMPUTADORAS) ---
-          setTimeout(() => {
-            window.print();
-            
-            // Restaurar DOM
-            document.title = tOrig;
-            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
-            wrapperElement.classList.remove('block', 'static', 'w-[800px]', 'mx-auto');
-            hiddenElements.forEach(child => child.classList.remove('hidden'));
-          }, 500); // Dar suficiente tiempo para repintado completo
-        } else {
-          // --- SISTEMA HTML2PDF (CELULARES) ---
-          if (typeof showSnackbar === "function") {
-            showSnackbar("Generando PDF, por favor aguardá...", "info");
-          }
-
-          const opt = {
-            margin:       0.2,
-            filename:     titulo + '.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 800 },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-          };
-
-          // Restauramos el setTimeout para asegurar que el celular repinte la UI
-          setTimeout(async () => {
-            try {
-              await window.html2pdf().set(opt).from(wrapperElement).save();
-              
-              if (typeof showSnackbar === "function") {
-                showSnackbar("¡PDF descargado con éxito!", "success");
-              }
-            } catch (error) {
-              console.error("Error al generar el PDF:", error);
-              if (typeof mostrarAlerta === "function") {
-                mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
-              }
-            } finally {
-              // Restaurar DOM
-              document.title = tOrig;
-              wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
-              wrapperElement.classList.remove('block', 'static', 'w-[800px]', 'mx-auto');
-              hiddenElements.forEach(child => child.classList.remove('hidden'));
-            }
-          }, 800); // 800ms para asegurar render total en celulares lentos
-        }
+        // Damos un pequeño tiempo para que el DOM se repinte con el nuevo título y clases
+        setTimeout(() => {
+          window.print();
+          
+          // Restauramos el estado original
+          document.title = tOrig;
+          wrapperElement.classList.remove('printing');
+        }, 500);
       }
 
       function imprimirConSistemaNativo() {
