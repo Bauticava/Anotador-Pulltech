@@ -1542,29 +1542,72 @@ window.onload = function () {
       async function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
 
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const tOrig = document.title;
-        document.title = titulo;
 
-        // Es fundamental scrollear a 0, 0. En celulares (especialmente iOS Safari), 
-        // si se llama a window.print() estando scrolleado, genera PDFs en blanco.
-        window.scrollTo(0, 0);
+        if (!isMobile) {
+          // --- COMPUTADORAS: Impresión nativa ---
+          document.title = titulo;
+          wrapperElement.classList.add('printing');
 
-        // Removemos el hidden temporalmente en la pantalla para forzar al navegador 
-        // a renderizar el DOM del reporte (evita páginas en blanco en móviles).
-        wrapperElement.classList.remove('hidden');
-        
-        // Añadimos la clase printing para que el CSS @media print le de el formato correcto
-        wrapperElement.classList.add('printing');
+          setTimeout(() => {
+            window.print();
+            document.title = tOrig;
+            wrapperElement.classList.remove('printing');
+          }, 500);
+        } else {
+          // --- CELULARES: Alternativa robusta con html2pdf ---
+          if (typeof showSnackbar === "function") {
+            showSnackbar("Generando PDF, por favor aguardá...", "info");
+          }
 
-        // Damos un pequeño tiempo para que el DOM se repinte
-        setTimeout(() => {
-          window.print();
+          // Para evitar páginas en blanco por conflictos de CSS o scroll en móviles,
+          // creamos un clon aislado del reporte y forzamos su renderizado real.
+          const tempContainer = document.createElement('div');
+          tempContainer.style.position = 'absolute';
+          tempContainer.style.top = '0';
+          tempContainer.style.left = '0';
+          tempContainer.style.width = '800px';
+          tempContainer.style.backgroundColor = 'white';
+          tempContainer.style.zIndex = '-9999'; // Lo mantenemos detrás de la app principal
           
-          // Restauramos el estado original
-          document.title = tOrig;
-          wrapperElement.classList.add('hidden');
-          wrapperElement.classList.remove('printing');
-        }, 500);
+          const clone = wrapperElement.cloneNode(true);
+          // Limpiamos las clases que lo ocultan
+          clone.classList.remove('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
+          clone.classList.add('block', 'static', 'w-[800px]');
+          clone.style.display = 'block';
+
+          tempContainer.appendChild(clone);
+          document.body.appendChild(tempContainer);
+
+          window.scrollTo(0, 0);
+
+          const opt = {
+            margin:       0.2,
+            filename:     titulo + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 1.5, useCORS: true, logging: false, windowWidth: 800, scrollY: 0 },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+          };
+
+          // Damos tiempo al navegador para que repinte el clon antes de capturarlo
+          setTimeout(async () => {
+            try {
+              await window.html2pdf().set(opt).from(tempContainer).save();
+              if (typeof showSnackbar === "function") {
+                showSnackbar("¡PDF descargado con éxito!", "success");
+              }
+            } catch (error) {
+              console.error("Error al generar el PDF en celular:", error);
+              if (typeof mostrarAlerta === "function") {
+                mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
+              }
+            } finally {
+              // Limpiamos el DOM eliminando el contenedor clonado
+              document.body.removeChild(tempContainer);
+            }
+          }, 800);
+        }
       }
 
       function imprimirConSistemaNativo() {
