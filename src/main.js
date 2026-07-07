@@ -352,7 +352,16 @@ window.onload = function () {
         document.getElementById("pantalla-principal").classList.remove("hidden");
         
         document.getElementById("panel-resultados").classList.add("hidden");
-        document.getElementById("panel-configuracion").classList.add("hidden");
+        
+        const pConf = document.getElementById("panel-configuracion");
+        if (pConf) pConf.classList.add("hidden");
+        
+        const pPantConf = document.getElementById("pantalla-configuracion");
+        if (pPantConf) {
+          pPantConf.classList.add("hidden");
+          pPantConf.classList.remove("flex");
+        }
+
         document.getElementById("panel-registro").classList.remove("hidden");
         
         actualizarInterfaz();
