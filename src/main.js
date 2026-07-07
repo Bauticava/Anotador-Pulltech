@@ -1545,7 +1545,6 @@ window.onload = function () {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         // --- PREPARAR DOM PARA IMPRESIÓN/CAPTURA ---
-        // Ocultar todo excepto el wrapper
         const children = Array.from(document.body.children);
         const hiddenElements = [];
         
@@ -1556,14 +1555,13 @@ window.onload = function () {
           }
         });
 
-        // Convertir el wrapper en un elemento estático normal para evitar problemas de canvas/impresión
-        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0', 'z-[9999]');
-        wrapperElement.classList.add('block', 'static');
+        // Convertir a block y forzar ancho de 800px para que los PDFs mantengan formato A4
+        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
+        wrapperElement.classList.add('block', 'static', 'w-[800px]', 'mx-auto');
 
         const tOrig = document.title;
         document.title = titulo;
 
-        // Desplazar al principio (vital para html2canvas y window.print)
         window.scrollTo(0, 0);
 
         if (!isMobile) {
@@ -1573,11 +1571,10 @@ window.onload = function () {
             
             // Restaurar DOM
             document.title = tOrig;
-            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'z-[9999]');
-            wrapperElement.classList.remove('block', 'static');
+            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
+            wrapperElement.classList.remove('block', 'static', 'w-[800px]', 'mx-auto');
             hiddenElements.forEach(child => child.classList.remove('hidden'));
-          }, 300);
-
+          }, 500); // Dar suficiente tiempo para repintado completo
         } else {
           // --- SISTEMA HTML2PDF (CELULARES) ---
           if (typeof showSnackbar === "function") {
@@ -1588,11 +1585,11 @@ window.onload = function () {
             margin:       0.2,
             filename:     titulo + '.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 800 },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
           };
 
-          // Restauramos el setTimeout para asegurar que iOS/Android rendericen el DOM estático
+          // Restauramos el setTimeout para asegurar que el celular repinte la UI
           setTimeout(async () => {
             try {
               await window.html2pdf().set(opt).from(wrapperElement).save();
@@ -1608,11 +1605,11 @@ window.onload = function () {
             } finally {
               // Restaurar DOM
               document.title = tOrig;
-              wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'z-[9999]');
-              wrapperElement.classList.remove('block', 'static');
+              wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
+              wrapperElement.classList.remove('block', 'static', 'w-[800px]', 'mx-auto');
               hiddenElements.forEach(child => child.classList.remove('hidden'));
             }
-          }, 500);
+          }, 800); // 800ms para asegurar render total en celulares lentos
         }
       }
 
