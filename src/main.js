@@ -1580,7 +1580,7 @@ window.onload = function () {
           }
 
           wrapperElement.classList.remove('hidden');
-          wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'bg-white', 'z-[9999]');
+          wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-[800px]', 'bg-white', 'z-[9999]');
 
           window.scrollTo(0, 0);
 
@@ -1592,7 +1592,7 @@ window.onload = function () {
             margin:       0.2,
             filename:     titulo + '.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 800 },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
           };
 
