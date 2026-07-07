@@ -1884,37 +1884,49 @@ window.importarDatos = importarDatos;
 
 // --- AUTH LOGIC ---
 async function initAuth() {
+  const hideAllAppScreens = () => {
+    ['pantalla-inicio', 'pantalla-configuracion', 'pantalla-historial', 'pantalla-principal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    });
+  };
+
+  const showAuthScreen = () => {
+    document.getElementById('main-header').classList.add('hidden');
+    hideAllAppScreens();
+    const auth = document.getElementById('pantalla-auth');
+    auth.classList.remove('hidden');
+    auth.classList.add('flex');
+  };
+
+  const showAppScreens = () => {
+    document.getElementById('main-header').classList.remove('hidden');
+    const auth = document.getElementById('pantalla-auth');
+    auth.classList.add('hidden');
+    auth.classList.remove('flex');
+    window.restaurarEstadoDOM();
+  };
+
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     authUser = session.user;
-    hideAuthScreen();
-    document.getElementById('main-header').classList.remove('hidden');
-    window.restaurarEstadoDOM();
+    showAppScreens();
     await fetchCloudData();
   } else {
-    document.getElementById('main-header').classList.add('hidden');
-    document.getElementById('pantalla-inicio').classList.add('hidden');
-    document.getElementById('pantalla-configuracion').classList.add('hidden');
-    document.getElementById('pantalla-historial').classList.add('hidden');
-    document.getElementById('pantalla-principal').classList.add('hidden');
-    document.getElementById('pantalla-auth').classList.remove('hidden');
+    showAuthScreen();
   }
 
   supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session) {
       authUser = session.user;
-      hideAuthScreen();
-      document.getElementById('main-header').classList.remove('hidden');
-      window.restaurarEstadoDOM();
+      showAppScreens();
       await fetchCloudData();
     } else {
       authUser = null;
-      document.getElementById('main-header').classList.add('hidden');
-      document.getElementById('pantalla-inicio').classList.add('hidden');
-      document.getElementById('pantalla-configuracion').classList.add('hidden');
-      document.getElementById('pantalla-historial').classList.add('hidden');
-      document.getElementById('pantalla-principal').classList.add('hidden');
-      document.getElementById('pantalla-auth').classList.remove('hidden');
+      showAuthScreen();
     }
   });
 }
