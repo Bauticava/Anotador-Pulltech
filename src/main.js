@@ -1561,18 +1561,21 @@ window.onload = function () {
             showSnackbar("Generando PDF, por favor aguardá...", "info");
           }
 
-          // Para evitar páginas en blanco por conflictos de CSS o scroll en móviles,
-          // creamos un clon aislado del reporte y forzamos su renderizado real.
-          const tempContainer = document.createElement('div');
+          // Para evitar que iOS Safari optimice y no dibuje el elemento (hoja en blanco),
+          // lo ponemos visible temporalmente por encima de todo.
+          let tempContainer = document.createElement('div');
           tempContainer.style.position = 'absolute';
           tempContainer.style.top = '0';
           tempContainer.style.left = '0';
           tempContainer.style.width = '800px';
           tempContainer.style.backgroundColor = 'white';
-          tempContainer.style.zIndex = '-9999'; // Lo mantenemos detrás de la app principal
+          tempContainer.style.zIndex = '999999'; // Visible para forzar renderizado real
           
-          const clone = wrapperElement.cloneNode(true);
-          // Limpiamos las clases que lo ocultan
+          let clone = wrapperElement.cloneNode(true);
+          // Limpiamos IDs para evitar colisiones internas en html2canvas
+          clone.removeAttribute('id');
+          Array.from(clone.querySelectorAll('[id]')).forEach(el => el.removeAttribute('id'));
+
           clone.classList.remove('hidden', 'absolute', 'top-0', 'left-0', 'w-full', 'z-[9999]');
           clone.classList.add('block', 'static', 'w-[800px]');
           clone.style.display = 'block';
@@ -1582,30 +1585,39 @@ window.onload = function () {
 
           window.scrollTo(0, 0);
 
+          // Calculamos la escala dinámica. iOS Safari devuelve un canvas en blanco 
+          // si el canvas excede ~4096px de alto o si la memoria RAM se agota.
+          const height = tempContainer.offsetHeight;
+          let safeScale = 1.2; 
+          if (height * safeScale > 4000) {
+            safeScale = Math.max(0.8, 4000 / height);
+          }
+
           const opt = {
             margin:       0.2,
             filename:     titulo + '.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 1.5, useCORS: true, logging: false, windowWidth: 800, scrollY: 0 },
+            image:        { type: 'jpeg', quality: 0.95 },
+            html2canvas:  { scale: safeScale, useCORS: true, logging: false, windowWidth: 800, scrollY: 0 },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
           };
 
-          // Damos tiempo al navegador para que repinte el clon antes de capturarlo
-          setTimeout(async () => {
-            try {
-              await window.html2pdf().set(opt).from(tempContainer).save();
+          // Damos tiempo al navegador para repintar antes de capturar
+          setTimeout(() => {
+            window.html2pdf().set(opt).from(tempContainer).save().then(() => {
               if (typeof showSnackbar === "function") {
                 showSnackbar("¡PDF descargado con éxito!", "success");
               }
-            } catch (error) {
+            }).catch(error => {
               console.error("Error al generar el PDF en celular:", error);
               if (typeof mostrarAlerta === "function") {
                 mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
               }
-            } finally {
-              // Limpiamos el DOM eliminando el contenedor clonado
+            }).finally(() => {
+              // Limpiamos el DOM y liberamos memoria explícitamente
               document.body.removeChild(tempContainer);
-            }
+              tempContainer = null;
+              clone = null;
+            });
           }, 800);
         }
       }
