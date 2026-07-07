@@ -1545,7 +1545,7 @@ window.onload = function () {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         if (!isMobile) {
-          // --- SISTEMA DE IMPRESION NATIVO (ESCRITORIO) ---
+          // --- SISTEMA NATIVO (COMPUTADORAS) ---
           const children = Array.from(document.body.children);
           const hiddenElements = [];
           
@@ -1556,22 +1556,24 @@ window.onload = function () {
             }
           });
 
-          wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0');
-          wrapperElement.classList.add('block', 'static');
+          // Solo removemos hidden. Mantener absolute top-0 left-0 w-full asegura que se vea en pantalla.
+          // Agregar h-auto asegura que no se corte.
+          wrapperElement.classList.remove('hidden');
+          wrapperElement.classList.add('h-auto');
 
           const tOrig = document.title;
           document.title = titulo;
 
-          // Esperar 100ms para renderizar y abrir la ventana de impresión clásica
+          // Esperar un poco para que el DOM se repinte
           setTimeout(() => {
             window.print();
             
             // Restaurar DOM
             document.title = tOrig;
-            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0');
-            wrapperElement.classList.remove('block', 'static');
+            wrapperElement.classList.add('hidden');
+            wrapperElement.classList.remove('h-auto');
             hiddenElements.forEach(child => child.classList.remove('hidden'));
-          }, 100);
+          }, 300);
 
         } else {
           // --- SISTEMA HTML2PDF (CELULARES) ---
@@ -1580,36 +1582,36 @@ window.onload = function () {
           }
 
           wrapperElement.classList.remove('hidden');
-          wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-[800px]', 'bg-white', 'z-[9999]');
+          wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'bg-white', 'z-[9999]');
 
           window.scrollTo(0, 0);
-
-          // Forzar reflow sincrónico para que html2canvas capture el elemento con sus estilos actualizados
-          // sin necesidad de usar setTimeout (lo cual rompe el user gesture en iOS Safari)
-          void wrapperElement.offsetWidth;
 
           const opt = {
             margin:       0.2,
             filename:     titulo + '.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 800 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
           };
 
-          try {
-            await window.html2pdf().set(opt).from(wrapperElement).save();
-            
-            if (typeof showSnackbar === "function") {
-              showSnackbar("¡PDF descargado con éxito!", "success");
+          // Restauramos el setTimeout para asegurar que iOS/Android rendericen el DOM
+          // antes de que html2canvas tome la captura (soluciona la pantalla en blanco).
+          setTimeout(async () => {
+            try {
+              await window.html2pdf().set(opt).from(wrapperElement).save();
+              
+              if (typeof showSnackbar === "function") {
+                showSnackbar("¡PDF descargado con éxito!", "success");
+              }
+            } catch (error) {
+              console.error("Error al generar el PDF:", error);
+              if (typeof mostrarAlerta === "function") {
+                mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
+              }
+            } finally {
+              wrapperElement.classList.add('hidden');
             }
-          } catch (error) {
-            console.error("Error al generar el PDF:", error);
-            if (typeof mostrarAlerta === "function") {
-              mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
-            }
-          } finally {
-            wrapperElement.classList.add('hidden');
-          }
+          }, 500);
         }
       }
 
