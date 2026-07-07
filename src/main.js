@@ -1997,24 +1997,26 @@ async function fetchCloudData() {
       .single();
       
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 is 'not found'
-    if (data && data.backup_json) {
-      const cloudData = data.backup_json;
-      
+    
+    let cloudData = (data && data.backup_json) ? data.backup_json : null;
+    
+    let localBase = JSON.parse(localStorage.getItem("h_base_tiradores") || "[]");
+    let localHist = JSON.parse(localStorage.getItem("h_historial") || "[]");
+
+    if (cloudData) {
       // Merge base_tiradores (Array of Strings)
-      let localBase = JSON.parse(localStorage.getItem("h_base_tiradores") || "[]");
       let cloudBase = JSON.parse(cloudData.h_base_tiradores || "[]");
       let mergedBase = [...new Set([...localBase, ...cloudBase])];
       localStorage.setItem("h_base_tiradores", JSON.stringify(mergedBase));
       baseTiradores = mergedBase;
       
       // Merge historial (Array of Objects with id)
-      let localHist = JSON.parse(localStorage.getItem("h_historial") || "[]");
       let cloudHist = JSON.parse(cloudData.h_historial || "[]");
       
       let histMap = new Map();
       // Add cloud first
       cloudHist.forEach(item => histMap.set(item.id, item));
-      // Overwrite/Add local (local usually is newer if it exists and differs, but id is timestamp so they are unique)
+      // Overwrite/Add local
       localHist.forEach(item => histMap.set(item.id, item));
       
       let mergedHist = Array.from(histMap.values()).sort((a, b) => b.id - a.id);
@@ -2022,6 +2024,12 @@ async function fetchCloudData() {
       
       actualizarInterfaz();
     }
+    
+    // IMPORTANTE: Después de fusionar los datos locales con los de la nube (o si la nube estaba vacía),
+    // forzamos una subida a Supabase. Esto asegura que los datos locales que tenías en el dispositivo
+    // antes de activar este sistema, se suban automáticamente a tu cuenta.
+    syncCloudData();
+    
   } catch (e) {
     console.error("Error fetching cloud data:", e);
   }
