@@ -1542,23 +1542,27 @@ window.onload = function () {
       async function prepararYImprimir(wrapperElement, titulo) {
         if (!wrapperElement) return;
 
-        // Utilizamos el sistema nativo de impresión del navegador para ambas plataformas.
-        // Esto garantiza un PDF vectorial, con texto seleccionable, bajo peso en KB,
-        // y elimina los bugs de PDF en blanco que ocurren por problemas de memoria de html2canvas en celulares.
-        // Además, soluciona el problema de impresión en computadoras utilizando la clase '.printing'.
-
         const tOrig = document.title;
         document.title = titulo;
 
-        // Añadimos la clase printing para que el CSS @media print muestre este wrapper y oculte el resto
+        // Es fundamental scrollear a 0, 0. En celulares (especialmente iOS Safari), 
+        // si se llama a window.print() estando scrolleado, genera PDFs en blanco.
+        window.scrollTo(0, 0);
+
+        // Removemos el hidden temporalmente en la pantalla para forzar al navegador 
+        // a renderizar el DOM del reporte (evita páginas en blanco en móviles).
+        wrapperElement.classList.remove('hidden');
+        
+        // Añadimos la clase printing para que el CSS @media print le de el formato correcto
         wrapperElement.classList.add('printing');
 
-        // Damos un pequeño tiempo para que el DOM se repinte con el nuevo título y clases
+        // Damos un pequeño tiempo para que el DOM se repinte
         setTimeout(() => {
           window.print();
           
           // Restauramos el estado original
           document.title = tOrig;
+          wrapperElement.classList.add('hidden');
           wrapperElement.classList.remove('printing');
         }, 500);
       }
