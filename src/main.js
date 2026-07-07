@@ -1584,6 +1584,10 @@ window.onload = function () {
 
           window.scrollTo(0, 0);
 
+          // Forzar reflow sincrónico para que html2canvas capture el elemento con sus estilos actualizados
+          // sin necesidad de usar setTimeout (lo cual rompe el user gesture en iOS Safari)
+          void wrapperElement.offsetWidth;
+
           const opt = {
             margin:       0.2,
             filename:     titulo + '.pdf',
@@ -1592,22 +1596,20 @@ window.onload = function () {
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
           };
 
-          setTimeout(async () => {
-            try {
-              await html2pdf().set(opt).from(wrapperElement).save();
-              
-              if (typeof showSnackbar === "function") {
-                showSnackbar("¡PDF descargado con éxito!", "success");
-              }
-            } catch (error) {
-              console.error("Error al generar el PDF:", error);
-              if (typeof mostrarAlerta === "function") {
-                mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
-              }
-            } finally {
-              wrapperElement.classList.add('hidden');
+          try {
+            await window.html2pdf().set(opt).from(wrapperElement).save();
+            
+            if (typeof showSnackbar === "function") {
+              showSnackbar("¡PDF descargado con éxito!", "success");
             }
-          }, 500);
+          } catch (error) {
+            console.error("Error al generar el PDF:", error);
+            if (typeof mostrarAlerta === "function") {
+              mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
+            }
+          } finally {
+            wrapperElement.classList.add('hidden');
+          }
         }
       }
 
