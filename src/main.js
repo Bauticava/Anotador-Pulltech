@@ -1544,34 +1544,37 @@ window.onload = function () {
 
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+        // --- PREPARAR DOM PARA IMPRESIÓN/CAPTURA ---
+        // Ocultar todo excepto el wrapper
+        const children = Array.from(document.body.children);
+        const hiddenElements = [];
+        
+        children.forEach(child => {
+          if (child !== wrapperElement && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
+            hiddenElements.push(child);
+            child.classList.add('hidden');
+          }
+        });
+
+        // Convertir el wrapper en un elemento estático normal para evitar problemas de canvas/impresión
+        wrapperElement.classList.remove('hidden', 'absolute', 'top-0', 'left-0', 'z-[9999]');
+        wrapperElement.classList.add('block', 'static');
+
+        const tOrig = document.title;
+        document.title = titulo;
+
+        // Desplazar al principio (vital para html2canvas y window.print)
+        window.scrollTo(0, 0);
+
         if (!isMobile) {
           // --- SISTEMA NATIVO (COMPUTADORAS) ---
-          const children = Array.from(document.body.children);
-          const hiddenElements = [];
-          
-          children.forEach(child => {
-            if (child !== wrapperElement && child.tagName !== 'SCRIPT' && !child.classList.contains('hidden') && child.id !== 'modal-generico') {
-              hiddenElements.push(child);
-              child.classList.add('hidden');
-            }
-          });
-
-          // Solo removemos hidden. Mantener absolute top-0 left-0 w-full asegura que se vea en pantalla.
-          // Agregar h-auto asegura que no se corte.
-          wrapperElement.classList.remove('hidden');
-          wrapperElement.classList.add('h-auto');
-
-          const tOrig = document.title;
-          document.title = titulo;
-
-          // Esperar un poco para que el DOM se repinte
           setTimeout(() => {
             window.print();
             
             // Restaurar DOM
             document.title = tOrig;
-            wrapperElement.classList.add('hidden');
-            wrapperElement.classList.remove('h-auto');
+            wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'z-[9999]');
+            wrapperElement.classList.remove('block', 'static');
             hiddenElements.forEach(child => child.classList.remove('hidden'));
           }, 300);
 
@@ -1581,11 +1584,6 @@ window.onload = function () {
             showSnackbar("Generando PDF, por favor aguardá...", "info");
           }
 
-          wrapperElement.classList.remove('hidden');
-          wrapperElement.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'bg-white', 'z-[9999]');
-
-          window.scrollTo(0, 0);
-
           const opt = {
             margin:       0.2,
             filename:     titulo + '.pdf',
@@ -1594,8 +1592,7 @@ window.onload = function () {
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
           };
 
-          // Restauramos el setTimeout para asegurar que iOS/Android rendericen el DOM
-          // antes de que html2canvas tome la captura (soluciona la pantalla en blanco).
+          // Restauramos el setTimeout para asegurar que iOS/Android rendericen el DOM estático
           setTimeout(async () => {
             try {
               await window.html2pdf().set(opt).from(wrapperElement).save();
@@ -1609,7 +1606,11 @@ window.onload = function () {
                 mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
               }
             } finally {
-              wrapperElement.classList.add('hidden');
+              // Restaurar DOM
+              document.title = tOrig;
+              wrapperElement.classList.add('hidden', 'absolute', 'top-0', 'left-0', 'z-[9999]');
+              wrapperElement.classList.remove('block', 'static');
+              hiddenElements.forEach(child => child.classList.remove('hidden'));
             }
           }, 500);
         }
