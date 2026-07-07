@@ -408,6 +408,7 @@ window.onload = function () {
       }
 
       function mostrarPantallaConfiguracion() {
+        if (!authUser) return;
         document.getElementById("pantalla-inicio").classList.add("hidden");
         document.getElementById("pantalla-inicio").classList.remove("flex");
         document.getElementById("pantalla-principal").classList.add("hidden");
@@ -441,6 +442,7 @@ window.onload = function () {
         mostrarPantallaResultados();
       }
       function irAPantallaPrincipal() {
+        if (!authUser) return;
         mostrarPantallaInicio();
       }
       function escapeHTML(str) {
@@ -1895,7 +1897,9 @@ async function initAuth() {
   };
 
   const showAuthScreen = () => {
-    document.getElementById('main-header').classList.add('hidden');
+    const header = document.getElementById('main-header');
+    header.classList.add('hidden');
+    header.classList.remove('flex');
     hideAllAppScreens();
     const auth = document.getElementById('pantalla-auth');
     auth.classList.remove('hidden');
@@ -1903,7 +1907,9 @@ async function initAuth() {
   };
 
   const showAppScreens = () => {
-    document.getElementById('main-header').classList.remove('hidden');
+    const header = document.getElementById('main-header');
+    header.classList.remove('hidden');
+    header.classList.add('flex');
     const auth = document.getElementById('pantalla-auth');
     auth.classList.add('hidden');
     auth.classList.remove('flex');
@@ -1964,6 +1970,7 @@ async function handleAuth(e) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       // onAuthStateChange will handle UI
+      btn.textContent = 'Ingresar';
     }
   } catch (error) {
     mostrarAlerta(error.message);
