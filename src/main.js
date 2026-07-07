@@ -1593,31 +1593,50 @@ window.onload = function () {
             safeScale = Math.max(0.8, 4000 / height);
           }
 
-          const opt = {
-            margin:       0.2,
-            filename:     titulo + '.pdf',
-            image:        { type: 'jpeg', quality: 0.95 },
-            html2canvas:  { scale: safeScale, useCORS: true, logging: false, windowWidth: 800, scrollY: 0 },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-          };
-
           // Damos tiempo al navegador para repintar antes de capturar
-          setTimeout(() => {
-            window.html2pdf().set(opt).from(tempContainer).save().then(() => {
+          setTimeout(async () => {
+            try {
+              // 1. Generamos el Canvas directamente
+              const canvas = await window.html2canvas(tempContainer, {
+                scale: safeScale,
+                useCORS: true,
+                logging: false,
+                windowWidth: 800,
+                scrollY: 0
+              });
+
+              // 2. Extraemos la imagen
+              const imgData = canvas.toDataURL('image/jpeg', 0.95);
+              const { jsPDF } = window.jspdf;
+              
+              // 3. Calculamos la altura proporcional (A4 ancho = 210mm)
+              const pdfWidth = 210; 
+              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+              
+              // 4. Creamos un PDF con altura dinámica para evitar cortes (como un ticket largo)
+              const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [pdfWidth, Math.max(297, pdfHeight)] 
+              });
+              
+              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+              pdf.save(titulo + '.pdf');
+
               if (typeof showSnackbar === "function") {
                 showSnackbar("¡PDF descargado con éxito!", "success");
               }
-            }).catch(error => {
+            } catch (error) {
               console.error("Error al generar el PDF en celular:", error);
               if (typeof mostrarAlerta === "function") {
                 mostrarAlerta("Hubo un error al generar el PDF. Intentá nuevamente.");
               }
-            }).finally(() => {
+            } finally {
               // Limpiamos el DOM y liberamos memoria explícitamente
               document.body.removeChild(tempContainer);
               tempContainer = null;
               clone = null;
-            });
+            }
           }, 800);
         }
       }
