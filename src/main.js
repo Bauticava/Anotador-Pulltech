@@ -1562,7 +1562,7 @@ window.onload = function () {
             const seqDiv = document.createElement("div");
             seqDiv.style.cssText = "display: flex; flex-wrap: wrap; gap: 4px;";
             seqDiv.innerHTML = t.tiros.map((tiro) => {
-              return `<div style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin:2px; border-radius:50%; font-size:12px; color:white; font-weight:bold; background-color:${tiro ? '#16a34a' : '#dc2626'}; box-shadow:0 1px 2px rgba(0,0,0,0.1);">${tiro ? '✓' : '✗'}</div>`;
+              return `<div style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin:2px; border-radius:50%; background-color:${tiro ? '#16a34a' : '#dc2626'}; box-shadow:0 1px 2px rgba(0,0,0,0.1);"></div>`;
             }).join("");
             
             div.appendChild(title);
