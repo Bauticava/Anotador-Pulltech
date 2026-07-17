@@ -1546,6 +1546,30 @@ window.onload = function () {
 
         const totalRec = document.getElementById("pdf-total-recaudado");
         if (totalRec) totalRec.textContent = `$${gD.toFixed(0)}`;
+
+        const cSec = document.getElementById("pdf-secuencias-cuerpo");
+        if (cSec) {
+          cSec.innerHTML = "";
+          tiradores.forEach((t) => {
+            if (t.tiros.length === 0) return;
+            const div = document.createElement("div");
+            div.style.cssText = "border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc; page-break-inside: avoid;";
+            
+            const title = document.createElement("h4");
+            title.style.cssText = "font-size: 14px; text-transform: uppercase; color: #1e3a8a; font-weight: 800; margin: 0 0 10px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;";
+            title.textContent = `${t.nombre} ${t.esGrupo ? '(Grupo)' : ''}`;
+            
+            const seqDiv = document.createElement("div");
+            seqDiv.style.cssText = "display: flex; flex-wrap: wrap; gap: 4px;";
+            seqDiv.innerHTML = t.tiros.map((tiro) => {
+              return `<div style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin:2px; border-radius:50%; font-size:12px; color:white; font-weight:bold; background-color:${tiro ? '#16a34a' : '#dc2626'}; box-shadow:0 1px 2px rgba(0,0,0,0.1);">${tiro ? '✓' : '✗'}</div>`;
+            }).join("");
+            
+            div.appendChild(title);
+            div.appendChild(seqDiv);
+            cSec.appendChild(div);
+          });
+        }
       }
 
       async function prepararYImprimir(wrapperElement, titulo) {
@@ -1594,42 +1618,41 @@ window.onload = function () {
 
           window.scrollTo(0, 0);
 
-          // Calculamos la escala dinámica. iOS Safari devuelve un canvas en blanco 
-          // si el canvas excede ~4096px de alto o si la memoria RAM se agota.
-          const height = tempContainer.offsetHeight;
-          let safeScale = 1.2; 
-          if (height * safeScale > 4000) {
-            safeScale = Math.max(0.8, 4000 / height);
-          }
-
           // Damos tiempo al navegador para repintar antes de capturar
           setTimeout(async () => {
             try {
-              // 1. Generamos el Canvas directamente
-              const canvas = await window.html2canvas(tempContainer, {
-                scale: safeScale,
-                useCORS: true,
-                logging: false,
-                windowWidth: 800,
-                scrollY: 0
-              });
-
-              // 2. Extraemos la imagen
-              const imgData = canvas.toDataURL('image/jpeg', 0.95);
               const { jsPDF } = window.jspdf;
-              
-              // 3. Calculamos la altura proporcional (A4 ancho = 210mm)
               const pdfWidth = 210; 
-              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-              
-              // 4. Creamos un PDF con altura dinámica para evitar cortes (como un ticket largo)
-              const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [pdfWidth, Math.max(297, pdfHeight)] 
-              });
-              
-              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+              const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+              pdf.deletePage(1); // Delete the default A4 page to add custom sized pages
+
+              const sections = Array.from(tempContainer.querySelectorAll('.pdf-page'));
+              // If there are no .pdf-page (e.g. individual PDF), just capture the whole clone
+              const targets = sections.length > 0 ? sections : [tempContainer.firstChild];
+
+              for (const target of targets) {
+                const height = target.offsetHeight;
+                // High quality scale: 2.5. Limit to 4000px height for iOS memory limits.
+                let safeScale = 2.5; 
+                if (height * safeScale > 4000) {
+                  safeScale = Math.max(1, 4000 / height);
+                }
+
+                const canvas = await window.html2canvas(target, {
+                  scale: safeScale,
+                  useCORS: true,
+                  logging: false,
+                  windowWidth: 800,
+                  scrollY: 0
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                pdf.addPage([pdfWidth, Math.max(297, pdfHeight)], 'portrait');
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+              }
+
               pdf.save(titulo + '.pdf');
 
               if (typeof showSnackbar === "function") {
