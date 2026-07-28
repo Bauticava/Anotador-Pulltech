@@ -16,7 +16,7 @@
   >
     <header
       id="main-header"
-      class="bg-blue-700 p-4 md:p-5 text-center shadow-md flex justify-between items-center px-6 select-none sticky top-0 z-50 hidden"
+      class="main-header hidden"
     >
       <button
         onclick="mostrarPantallaConfiguracion()"
@@ -42,7 +42,7 @@
     </header>
 
     <!-- Pantalla de Login -->
-    <div id="pantalla-auth" class="flex flex-col flex-1 items-center justify-center p-6 space-y-6 z-50">
+    <div id="pantalla-auth" class="flex flex-col flex-1 items-center justify-center p-6 space-y-6 z-30">
       <div class="text-center space-y-4">
         <h2 class="text-3xl font-black uppercase tracking-wider text-blue-900 dark:text-yellow-400">
           Iniciar Sesión
@@ -52,19 +52,19 @@
         </p>
       </div>
 
-      <div class="w-full max-w-sm space-y-4 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+      <div class="w-full max-w-sm space-y-4 card-base shadow-xl p-6">
         <form id="form-auth" class="space-y-4">
           <div>
             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email</label>
-            <input type="email" id="auth-email" required class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            <input type="email" id="auth-email" required class="input-base">
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Contraseña</label>
-            <input type="password" id="auth-password" required minlength="6" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+            <input type="password" id="auth-password" required minlength="6" class="input-base">
           </div>
           
           <div class="pt-2">
-            <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-md transition active:scale-95">
+            <button type="submit" id="btn-login" class="btn-primary w-full py-3">
               Ingresar
             </button>
           </div>
@@ -79,9 +79,9 @@
     </div>
 
     <!-- Pantalla de Inicio -->
-    <div id="pantalla-inicio" class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-12 animate-fade-in z-50">
+    <div id="pantalla-inicio" class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-12 animate-fade-in z-30">
       <div class="text-center space-y-4">
-        <div class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-blue-50 dark:bg-gray-800 mb-6 shadow-xl border-4 border-white dark:border-gray-700 relative overflow-hidden">
+        <div class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gray-50 dark:bg-gray-800 mb-6 shadow-xl border-4 border-white dark:border-gray-700 relative overflow-hidden">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-24 h-24 animate-[spin_3s_linear_infinite] drop-shadow-md">
             <defs>
               <mask id="holeMask">
@@ -91,10 +91,10 @@
             </defs>
             <g mask="url(#holeMask)">
               <!-- Alas Naranjas (Forma acampanada de la hélice) -->
-              <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" />
-              <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" />
+              <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
+              <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
               <!-- Cuerpo Blanco Central -->
-              <circle cx="50" cy="50" r="28" fill="#F8F9FA" />
+              <circle cx="50" cy="50" r="28" fill="#F8F9FA" stroke="black" stroke-width="1" />
               <!-- Anillo Rojo Central -->
               <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
             </g>
@@ -113,21 +113,21 @@
         <button 
           id="btn-continuar-serie"
           onclick="continuarSerieActual()" 
-          class="hidden w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl active:scale-95 flex items-center justify-center gap-3 text-lg"
+          class="hidden btn-success w-full py-4 text-lg"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg> Continuar Serie Actual
         </button>
 
         <button 
           onclick="iniciarNuevaSerie()" 
-          class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl active:scale-95 flex items-center justify-center gap-3 text-lg"
+          class="btn-primary w-full py-4 text-lg hover:-translate-y-1 hover:shadow-2xl"
         >
           <span>🎯</span> Nueva Serie
         </button>
         
         <button 
           onclick="verHistorialDesdeInicio()" 
-          class="w-full bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-200 dark:border-gray-700 font-bold py-4 rounded-2xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-3"
+          class="btn-outline w-full py-4"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg> Cargar Sesión Anterior
         </button>
@@ -135,7 +135,7 @@
     </div>
 
     <!-- Pantalla de Historial Dedicada -->
-    <div id="pantalla-historial" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-50 animate-fade-in pb-20 mt-4 space-y-6">
+    <div id="pantalla-historial" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-20 mt-4 space-y-6">
       <div class="flex items-center gap-4 border-b border-gray-700/50 pb-4">
         <button onclick="irAPantallaPrincipal()" class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 h-9 w-9 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -159,7 +159,7 @@
     </div>
 
     <!-- Pantalla de Configuración Dedicada -->
-    <div id="pantalla-configuracion" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-50 animate-fade-in pb-20 mt-4 space-y-6">
+    <div id="pantalla-configuracion" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-20 mt-4 space-y-6">
       <div class="flex items-center gap-4 border-b border-gray-200 dark:border-gray-700/50 pb-4">
         <button onclick="cerrarPantallaConfiguracion()" class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 h-9 w-9 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -172,22 +172,22 @@
       </div>
 
       <!-- Ajustes de Torneo -->
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+      <div class="card-base">
         <h3 class="text-lg font-bold text-yellow-600 dark:text-yellow-400 mb-4 border-b border-gray-200 dark:border-gray-700/50 pb-2">Ajustes del Torneo</h3>
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-2">Precio por Hélice</label>
-            <input type="number" id="precio-helice" value="0" min="0" onchange="cambiarPrecio()" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-lg" />
+            <input type="number" id="precio-helice" value="0" min="0" onchange="cambiarPrecio()" class="input-base font-mono text-lg" />
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-2">Mínimo para Podio</label>
-            <input type="number" id="min-podio" value="10" min="0" onchange="cambiarMinimumPodio()" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-lg" />
+            <input type="number" id="min-podio" value="10" min="0" onchange="cambiarMinimumPodio()" class="input-base font-mono text-lg" />
           </div>
         </div>
       </div>
 
       <!-- Ajustes de Experiencia -->
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg space-y-4">
+      <div class="card-base space-y-4">
         <h3 class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">Experiencia de Uso</h3>
         
         <div class="flex justify-between items-center py-2">
@@ -224,24 +224,24 @@
       </div>
 
       <!-- Respaldo y Seguridad -->
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg space-y-4">
+      <div class="card-base space-y-4">
         <h3 class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">Respaldo de Datos</h3>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Exporta tus tiradores e historial para que nunca pierdas tu información.</p>
         
-        <button onclick="exportarDatos()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-3">
+        <button onclick="exportarDatos()" class="btn-success w-full py-3.5">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> Exportar Copia de Seguridad
         </button>
         
-        <button onclick="document.getElementById('importar-archivo').click()" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-3 border border-gray-300 dark:border-gray-600">
+        <button onclick="document.getElementById('importar-archivo').click()" class="btn-outline w-full py-3.5">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Restaurar Copia de Seguridad
         </button>
         <input type="file" id="importar-archivo" accept=".json" class="hidden" onchange="importarDatos(event)">
       </div>
 
       <!-- Cuenta de Usuario -->
-      <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg space-y-4">
+      <div class="card-base space-y-4">
         <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">Cuenta de Usuario</h3>
-        <button onclick="cerrarSesion()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-3">
+        <button onclick="cerrarSesion()" class="btn-danger w-full py-3.5">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg> Cerrar Sesión
         </button>
       </div>
@@ -312,7 +312,7 @@
                 Total: 0
               </div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex items-center gap-2">
               <div
                 id="indicador-racha-negativa"
                 class="hidden bg-blue-600/20 text-blue-300 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-blue-600/40"
@@ -321,10 +321,13 @@
               </div>
               <div
                 id="indicador-racha"
-                class="hidden bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40 animate-pulse"
+                class="hidden bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40"
               >
                 🔥 Racha: 0
               </div>
+              <button onclick="deshacerUltimoTiro()" id="btn-deshacer-main" class="w-8 h-8 md:w-10 md:h-10 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90" disabled>
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+              </button>
             </div>
           </div>
           <div
@@ -334,6 +337,12 @@
             Seleccioná un tirador
           </div>
           <div id="grupo-racha-display" class="hidden flex justify-center gap-2 mt-1 mb-2"></div>
+
+          <div id="pool-status-banner" class="hidden bg-purple-900/40 border border-purple-500/50 text-purple-200 text-xs font-bold rounded p-2 mb-2 flex justify-between items-center">
+            <span id="pool-ronda-info">Pool: Ronda 1</span>
+            <button onclick="forzarFinPool()" class="text-[10px] bg-red-600/80 px-2 py-0.5 rounded text-white hover:bg-red-500">Terminar</button>
+          </div>
+
           <div
             id="multimode-sequence-display"
             class="hidden text-xs font-mono tracking-widest bg-black/20 p-2 rounded border border-gray-700/50 min-h-[30px] flex items-center justify-center"
@@ -343,7 +352,7 @@
               onclick="registrarTiro(true)"
               id="btn-pego"
               disabled
-              class="bg-green-600 disabled:opacity-20 text-white font-extrabold py-3 md:py-4 rounded-xl text-lg md:text-xl transition-all shadow-[0_5px_0_rgb(21,128,61)] active:shadow-[0_0px_0_rgb(21,128,61)] active:translate-y-[5px] flex flex-col items-center justify-center gap-1"
+              class="btn-action-pego py-3 md:py-4 text-lg md:text-xl"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
@@ -354,7 +363,7 @@
               onclick="registrarTiro(false)"
               id="btn-erro"
               disabled
-              class="bg-red-600 disabled:opacity-20 text-white font-extrabold py-3 md:py-4 rounded-xl text-lg md:text-xl transition-all shadow-[0_5px_0_rgb(185,28,28)] active:shadow-[0_0px_0_rgb(185,28,28)] active:translate-y-[5px] flex flex-col items-center justify-center gap-1"
+              class="btn-action-erro py-3 md:py-4 text-lg md:text-xl"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
@@ -366,13 +375,19 @@
         </section>
         <button
           onclick="verPodioParcial()"
-          class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-yellow-400 font-bold py-2.5 md:py-3 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow active:scale-95 flex items-center justify-center gap-2"
+          class="w-full bg-lime-200 hover:bg-lime-300 border border-lime-400 text-gray-950 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-yellow-400 font-bold py-2.5 md:py-3 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow active:scale-95 flex items-center justify-center gap-2 transition-colors"
         >
           📊 Ver Clasificación Parcial
         </button>
         <button
+          onclick="abrirModalPool()"
+          class="w-full bg-lime-400 hover:bg-lime-500 border border-lime-600 text-gray-950 dark:bg-purple-600 dark:hover:bg-purple-500 dark:border-transparent dark:text-white font-bold py-2.5 md:py-3 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow active:scale-95 flex items-center justify-center gap-2 transition-colors"
+        >
+          🏆 Iniciar Pool
+        </button>
+        <button
           onclick="finalizarSesion()"
-          class="w-full bg-yellow-600 text-gray-950 font-extrabold py-3.5 md:py-4 rounded-xl text-center uppercase tracking-wider shadow-lg active:scale-95 md:text-lg"
+          class="w-full bg-yellow-400 hover:bg-yellow-500 border border-yellow-600 text-gray-950 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:border-transparent dark:text-gray-950 font-extrabold py-3.5 md:py-4 rounded-xl text-center uppercase tracking-wider shadow-lg active:scale-95 md:text-lg mt-2 transition-colors"
         >
           🏁 Finalizar Sesión
         </button>
@@ -418,7 +433,7 @@
           id="card-tabla"
           class="card-dark p-4 rounded-xl shadow border space-y-4"
         >
-          <div class="flex flex-col gap-2 border-b border-gray-700/50 pb-2">
+          <div class="flex flex-col gap-2 border-b border-orange-200 dark:border-gray-700/50 pb-2">
             <div class="flex justify-between items-center w-full">
               <div class="flex items-center gap-2">
                 <h2
@@ -435,7 +450,7 @@
                 </button>
               </div>
               <div
-                class="flex bg-gray-900/80 p-0.5 rounded-lg border border-gray-700 text-[10px] font-bold"
+                class="flex bg-orange-100 dark:bg-gray-900/80 p-0.5 rounded-lg border border-orange-200 dark:border-gray-700 text-[10px] font-bold"
               >
                 <button
                   onclick="cambiarCriterioOrden('porcentaje')"
@@ -458,7 +473,7 @@
             <table class="w-full text-left border-collapse md:text-base">
               <thead>
                 <tr
-                  class="border-b border-gray-700 text-gray-400 text-xs md:text-sm uppercase"
+                  class="border-b border-orange-200 dark:border-gray-700 text-gray-400 text-xs md:text-sm uppercase"
                 >
                   <th class="py-2">Tirador/Grupo</th>
                   <th class="py-2 text-center">Total</th>
@@ -474,13 +489,13 @@
               </thead>
               <tbody
                 id="tabla-resultados"
-                class="divide-y divide-gray-700/50 text-sm md:text-base"
+                class="divide-y divide-orange-200 dark:divide-gray-700/50 text-sm md:text-base"
               ></tbody>
             </table>
           </div>
           <div
             id="card-resumen-financiero"
-            class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 flex justify-between items-center font-mono text-sm md:text-base"
+            class="bg-orange-50 dark:bg-gray-900/50 p-3 rounded-lg border border-orange-200 dark:border-gray-700 flex justify-between items-center font-mono text-sm md:text-base"
           >
             <div
               class="text-xs md:text-sm font-sans font-bold text-gray-400 uppercase"
@@ -496,7 +511,7 @@
               </div>
               <div
                 id="resumen-total-dinero"
-                class="text-base md:text-lg font-bold text-green-400"
+                class="text-base md:text-lg font-bold text-green-600 dark:text-green-400"
               >
                 $0
               </div>
@@ -548,10 +563,10 @@
 
     <div
       id="modal-generico"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] transition-opacity"
+      class="hidden modal-overlay"
     >
       <div
-        class="bg-gray-800 border border-gray-700 p-6 rounded-2xl shadow-2xl w-full max-w-sm transform transition-all text-center"
+        class="modal-content max-w-sm text-center"
       >
         <h3 id="modal-titulo" class="text-lg font-bold text-white mb-2">
           Atención
@@ -565,13 +580,13 @@
         <div class="flex gap-3 justify-center">
           <button
             id="btn-modal-cancelar"
-            class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-xl text-sm transition hidden"
+            class="btn-secondary flex-1 py-2.5 text-sm hidden"
           >
             Cancelar
           </button>
           <button
             id="btn-modal-confirmar"
-            class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm transition"
+            class="btn-primary flex-1 py-2.5 text-sm"
           >
             Aceptar
           </button>
@@ -639,6 +654,164 @@
       </div>
     </div>
 
+    <!-- Pantalla Superpuesta: Pool Activa -->
+    <div id="pantalla-pool-activa" class="hidden w-full max-w-xl mx-auto p-4 md:p-6 space-y-6 flex-col relative z-30 animate-fade-in pb-env pb-24">
+      
+      <!-- Card Superior: Header de la Pool & Siguiente Tirador -->
+      <div class="card-base p-4 md:p-6 flex flex-col gap-4">
+        <!-- Header -->
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 id="pool-activa-titulo" class="text-xl md:text-2xl font-black text-orange-500 dark:text-purple-400 uppercase tracking-wider leading-none">Pool en Curso</h2>
+            <p id="pool-activa-ronda" class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-semibold mt-1">Ronda 1</p>
+          </div>
+          <button onclick="terminarPoolManual()" class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-bold transition-colors">
+            Terminar Pool
+          </button>
+        </div>
+        <!-- Siguiente Tirador -->
+        <div class="bg-orange-50 dark:bg-purple-900/30 p-3 rounded-xl border border-orange-200 dark:border-purple-500/30 text-center flex items-center justify-center gap-2">
+          <span class="text-xs md:text-sm text-orange-600 dark:text-purple-300 font-semibold tracking-widest uppercase">Próximo Turno:</span>
+          <span id="pool-activa-siguiente" class="text-sm md:text-base font-bold text-gray-900 dark:text-white">---</span>
+        </div>
+      </div>
+
+      <!-- Lista de Tiradores en Pool -->
+      <div id="pool-activa-lista" class="space-y-3">
+        <!-- Renderizado desde JS (se renderizarán como tarjetas individuales) -->
+      </div>
+
+      <!-- Controles del Tirador Activo (Fijo abajo) -->
+      <div class="mt-auto pb-safe">
+        <div class="card-base p-4 md:p-6">
+          <div class="flex justify-between items-center mb-2 px-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs md:text-sm font-semibold text-orange-500 dark:text-purple-400 uppercase tracking-wide">Tirador Activo</span>
+            </div>
+            <button onclick="deshacerTiroPool()" id="btn-pool-deshacer" class="w-10 h-10 bg-orange-100 hover:bg-orange-200 text-orange-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90" disabled>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+            </button>
+          </div>
+          
+          <div id="pool-activa-tirador-nombre" class="text-xl md:text-2xl font-bold text-orange-600 dark:text-blue-400 h-7 md:h-8 transition-all truncate px-4 mb-3 text-center">
+            Seleccionando...
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 md:gap-6">
+            <button
+              onclick="registrarTiroPool(true)"
+              id="btn-pool-pego"
+              class="btn-action-pego py-3 md:py-4 text-lg md:text-xl"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>PEGÓ</span>
+            </button>
+            <button
+              onclick="registrarTiroPool(false)"
+              id="btn-pool-erro"
+              class="btn-action-erro py-3 md:py-4 text-lg md:text-xl"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>ERRÓ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Pool -->
+    <div
+      id="modal-pool"
+      class="hidden modal-overlay z-[110]"
+    >
+      <div
+        class="modal-content max-w-md text-center max-h-[90vh]"
+      >
+        <h3 class="text-xl font-black text-purple-400 uppercase tracking-wide mb-4">
+          🏆 Configurar Pool
+        </h3>
+        
+        <!-- Paso 1: Seleccionar Participantes -->
+        <div id="pool-step-1" class="flex-1 overflow-y-auto flex flex-col">
+          <p class="text-sm text-gray-300 mb-4 font-semibold text-left">Selecciona los participantes:</p>
+          <div id="lista-participantes-pool" class="space-y-2 mb-4 max-h-60 overflow-y-auto pr-1 text-left flex-1">
+            <!-- Checkboxes inyectados por JS -->
+          </div>
+          <div class="pt-2 border-t border-gray-700/50 mt-auto">
+            <button
+              onclick="siguientePasoPool()"
+              id="btn-pool-siguiente"
+              class="btn-primary w-full py-3 text-sm"
+            >
+              Siguiente
+            </button>
+            <button
+              onclick="cerrarModalPool()"
+              class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-xl text-sm transition"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <!-- Paso 2: Configurar Modo -->
+        <div id="pool-step-2" class="hidden flex-1 overflow-y-auto flex flex-col text-left space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Modo</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btn-pool-modo-torneo" onclick="setPoolModo('torneo')" class="bg-blue-600 text-white border border-blue-500 py-2 rounded-lg font-bold text-sm transition-colors">Torneo</button>
+              <button id="btn-pool-modo-americana" onclick="setPoolModo('americana')" class="bg-gray-700 text-gray-300 border border-gray-600 py-2 rounded-lg font-bold text-sm transition-colors">Americana</button>
+            </div>
+          </div>
+          
+          <div id="pool-config-torneo" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Cantidad de Hélices</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setPoolHelices(6)" id="btn-pool-helices-6" class="bg-blue-600 text-white border border-blue-500 py-1.5 rounded-lg font-bold text-sm transition-colors">6</button>
+                <button onclick="setPoolHelices(9)" id="btn-pool-helices-9" class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">9</button>
+                <button onclick="setPoolHelices(12)" id="btn-pool-helices-12" class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">12</button>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Tandas por turno</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="setPoolTandas(2)" id="btn-pool-tandas-2" class="bg-blue-600 text-white border border-blue-500 py-1.5 rounded-lg font-bold text-sm transition-colors">Dobles</button>
+                <button onclick="setPoolTandas(3)" id="btn-pool-tandas-3" class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">Triples</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 flex gap-2 mt-auto">
+            <div class="flex-1">
+              <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Inscripción ($)</label>
+              <input type="number" id="input-pool-inscripcion" value="0" min="0" step="100" class="w-full bg-gray-900 border border-gray-700 text-white p-2 rounded-xl text-center focus:outline-none focus:border-purple-500 transition-colors">
+            </div>
+          </div>
+
+          <div class="pt-4 flex gap-2 mt-auto">
+            <button
+              onclick="volverPaso1Pool()"
+              class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-950 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white font-semibold py-3 rounded-xl text-sm transition"
+            >
+              Atrás
+            </button>
+            <button
+              onclick="confirmarIniciarPool()"
+              class="flex-1 bg-lime-400 hover:bg-lime-500 text-gray-950 dark:bg-purple-600 dark:hover:bg-purple-500 dark:text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 text-sm uppercase tracking-wide transition"
+            >
+              Empezar Pool!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="wrapper-pdf" class="hidden absolute top-0 left-0 w-full bg-white z-[9999] p-8 text-black font-sans" style="font-family: 'Oswald', Arial, sans-serif;">
       <div style="max-width: 800px; margin: 0 auto;">
         <div class="pdf-page bg-white">
@@ -693,6 +866,15 @@
           </h3>
           <div id="pdf-secuencias-cuerpo" style="display: flex; flex-direction: column; gap: 20px;">
             <!-- Javascript inyectará secuencias aquí -->
+          </div>
+        </div>
+        
+        <div class="pdf-page bg-white" id="pdf-seccion-pools" style="page-break-before: always; margin-top: 40px; padding-top: 40px; border-top: 2px dashed #cbd5e1; display: none;">
+          <h3 style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 25px; border-left: 5px solid #2563eb; padding-left: 15px;">
+            Historial de Pools
+          </h3>
+          <div id="pdf-pools-cuerpo" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Javascript inyectará las pools aquí -->
           </div>
         </div>
         
@@ -783,6 +965,11 @@
               <td style="padding: 16px 20px; color: #64748b; text-align: right;"><span id="pdf-ind-cant-multi">0</span> x $<span id="pdf-ind-unit-multi">0</span></td>
               <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span id="pdf-ind-total-multi">0</span></td>
             </tr>
+            <tr id="pdf-ind-pool-line" style="display: none; border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Inscripción Pool</td>
+              <td style="padding: 16px 20px; color: #64748b; text-align: right;">-</td>
+              <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span id="pdf-ind-total-pool">0</span></td>
+            </tr>
             <tr style="background-color: #f1f5f9;">
               <td colspan="2" style="padding: 25px 20px; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase; text-align: right;">TOTAL A ABONAR</td>
               <td style="padding: 25px 20px; font-size: 24px; font-weight: 900; color: #1e3a8a; text-align: right;">$<span id="pdf-ind-monto">0</span></td>
@@ -848,12 +1035,6 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- Snackbar Undo -->
-    <div id="snackbar-undo" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-4 transition-transform duration-300 transform translate-y-24 opacity-0 z-50">
-      <span id="snackbar-mensaje" class="text-sm font-medium">Tiro registrado</span>
-      <button onclick="deshacerUltimoTiro()" class="text-blue-400 font-bold uppercase text-sm hover:text-blue-300">Deshacer</button>
     </div>
 
     <script type="module" src="/src/main.js"></script>
