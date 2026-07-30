@@ -495,7 +495,11 @@ function showSnackbar(mensaje) {
              
              div.className = `p-3 rounded-xl border flex justify-between items-center transition-opacity ${bgClass}`;
              
-             let seqHTML = stats.secuencia.map(p => p ? '🟢' : '🔴').join(' ');
+             let seqArray = stats.secuencia;
+             if (poolState.tipo === 'americana' && seqArray.length > 8) {
+               seqArray = seqArray.slice(-8);
+             }
+             let seqHTML = seqArray.map(p => p ? '🟢' : '🔴').join(' ');
              
              div.innerHTML = `
                <div class="font-bold text-sm ${nameColor}">${t.nombre}</div>
@@ -711,12 +715,9 @@ window.onload = function () {
             tiradores = JSON.parse(localStorage.getItem("h_tiradores")) || [];
           if (localStorage.getItem("h_base_tiradores"))
             baseTiradores = JSON.parse(localStorage.getItem("h_base_tiradores")) || [];
-          if (localStorage.getItem("h_estado"))
-            estadoApp = localStorage.getItem("h_estado") || "inicio";
           
-          if (!localStorage.getItem("h_estado") && tiradores.length > 0) {
-            estadoApp = "registro";
-          }
+          estadoApp = "inicio";
+          
           if (localStorage.getItem("h_idSel"))
             idSeleccionado = JSON.parse(localStorage.getItem("h_idSel"));
           if (localStorage.getItem("h_precio")) {
@@ -1524,30 +1525,7 @@ window.onload = function () {
           if (!multiModeActivo) {
             idiv.className = `p-3 rounded-lg border cursor-pointer ${esS ? (currentTheme === "dark" ? "bg-blue-950/40 border-blue-500 text-blue-200" : "bg-blue-50 border-blue-500 text-blue-900") : currentTheme === "dark" ? "bg-gray-900/60 border-gray-700 text-gray-300" : "bg-gray-50 border-gray-200 text-gray-700"}`;
             idiv.onclick = () => seleccionarTirador(t.id);
-            // SWIPE LOGIC
-            let touchStartX = 0;
-            idiv.addEventListener('touchstart', e => {
-              touchStartX = e.changedTouches[0].screenX;
-              idiv.style.transition = 'none';
-            }, {passive: true});
-            idiv.addEventListener('touchmove', e => {
-              const deltaX = e.changedTouches[0].screenX - touchStartX;
-              if (Math.abs(deltaX) < 80) {
-                idiv.style.transform = 'translateX(' + deltaX + 'px)';
-              }
-            }, {passive: true});
-            idiv.addEventListener('touchend', e => {
-              const touchEndX = e.changedTouches[0].screenX;
-              idiv.style.transition = 'transform 0.2s ease';
-              idiv.style.transform = 'translateX(0)';
-              const swipeThreshold = 40;
-              if (touchEndX < touchStartX - swipeThreshold) {
-                eliminarTirador(t.id);
-              }
-              if (touchEndX > touchStartX + swipeThreshold) {
-                editarTirador(t.id);
-              }
-            });
+            idiv.onclick = () => seleccionarTirador(t.id);
 
             idiv.innerHTML = `<div class="flex justify-between items-center w-full"><div class="truncate font-semibold text-sm flex-1 mr-2">${t.nombre}</div><div class="flex items-center gap-2"><span class="text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded ${currentTheme === "dark" ? "bg-gray-800 text-gray-400" : "bg-gray-200 text-gray-600"}">H: ${t.tiros.length} | P:${s.pegados}</span><button onclick="editarTirador(${t.id}, event)" class="text-xs">✏️</button><button onclick="eliminarTirador(${t.id}, event)" class="text-xs">❌</button></div></div>`;
             if (mH) {
@@ -1933,11 +1911,7 @@ window.onload = function () {
             maintainAspectRatio: false,
             plugins: {
               legend: {
-                labels: {
-                  color: cTxt,
-                  usePointStyle: true,
-                  pointStyle: "circle",
-                },
+                display: false,
               },
             },
             scales: {
@@ -2129,7 +2103,7 @@ window.onload = function () {
                 
                 const nameCol = document.createElement("div");
                 nameCol.style.cssText = "width: 120px; font-weight: bold; color: #334155;";
-                nameCol.textContent = part.nombre;
+                nameCol.innerHTML = `${part.nombre} <span style="font-weight: normal; color: #64748b; font-size: 10px;">(${part.stats.pegados})</span>`;
                 
                 const seqCol = document.createElement("div");
                 seqCol.style.cssText = "display: flex; flex-wrap: wrap; gap: 2px;";
@@ -2705,7 +2679,7 @@ async function syncCloudData() {
     
     const { error } = await supabase
       .from('user_backups')
-      .upsert({ user_id: authUser.id, backup_json: backupData });
+      .upsert({ user_id: authUser.id, backup_json: backupData }, { onConflict: 'user_id' });
       
     if (error) console.error("Error syncing:", error);
   } catch(e) {
