@@ -174,14 +174,14 @@ function showSnackbar(mensaje) {
 
       function mostrarAlertaFinPool(mensaje, callbackDeshacer) {
         document.getElementById("modal-generico").classList.remove("hidden");
-        document.getElementById("modal-titulo").textContent = "🏆 ¡Pool Finalizada! 🏆";
+        document.getElementById("modal-titulo").textContent = "¡Pool Finalizada!";
         document.getElementById("modal-mensaje").innerText = mensaje;
         document.getElementById("modal-input").classList.add("hidden");
         
         const btnCancelar = document.getElementById("btn-modal-cancelar");
         btnCancelar.classList.remove("hidden");
         btnCancelar.className = currentTheme === "dark" ? "btn-secondary flex-1 py-2.5 text-sm" : "bg-yellow-400 hover:bg-yellow-500 text-gray-950 font-bold flex-1 py-2.5 rounded-xl text-sm transition-colors";
-        btnCancelar.textContent = "↩️ Deshacer tiro";
+        btnCancelar.textContent = "Deshacer tiro";
         btnCancelar.onclick = () => {
           cerrarModalGenerico();
           if (callbackDeshacer) callbackDeshacer();
@@ -242,6 +242,10 @@ function showSnackbar(mensaje) {
       }
 
       window.abrirModalPool = function() {
+        if (poolState && poolState.activa) {
+          mostrarPoolActiva();
+          return;
+        }
         if (tiradores.length === 0) {
           mostrarAlerta("Agregá tiradores primero.");
           return;
@@ -265,6 +269,87 @@ function showSnackbar(mensaje) {
 
       window.cerrarModalPool = function() {
         document.getElementById("modal-pool").classList.add("hidden");
+      };
+
+      window.abrirModalSumarTiradorPool = function() {
+        if (!poolState || !poolState.activa || poolState.rondaActual > 1 || poolState.esDesempate) {
+          mostrarAlerta("Solo se pueden sumar tiradores durante la Ronda 1.");
+          return;
+        }
+        
+        const modal = document.getElementById("modal-sumar-tirador-pool");
+        const lista = document.getElementById("lista-disponibles-sumar-pool");
+        if (!modal || !lista) return;
+        
+        lista.innerHTML = "";
+        const disponibles = tiradores.filter(t => !t.esGrupo && !poolState.participantes.includes(t.id));
+        
+        if (disponibles.length === 0) {
+          lista.innerHTML = `<p class="text-xs text-gray-400 text-center py-3 font-semibold">Todos los tiradores de la pedana ya están participando en la Pool.</p>`;
+        } else {
+          disponibles.forEach(t => {
+            const div = document.createElement("div");
+            div.className = "flex justify-between items-center p-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/60";
+            div.innerHTML = `
+              <span class="font-bold text-sm text-gray-900 dark:text-white">${t.nombre}</span>
+              <button onclick="sumarTiradorExistenteAPool(${t.id})" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer">
+                + Sumar
+              </button>
+            `;
+            lista.appendChild(div);
+          });
+        }
+        
+        modal.classList.remove("hidden");
+      };
+
+      window.cerrarModalSumarTiradorPool = function() {
+        const modal = document.getElementById("modal-sumar-tirador-pool");
+        if (modal) modal.classList.add("hidden");
+        const input = document.getElementById("input-nuevo-tirador-pool");
+        if (input) input.value = "";
+      };
+
+      window.sumarTiradorExistenteAPool = function(id) {
+        if (!poolState || !poolState.activa || poolState.rondaActual > 1) return;
+        if (poolState.participantes.includes(id)) return;
+        
+        const t = tiradores.find(x => x.id === id);
+        if (!t) return;
+        
+        poolState.participantes.push(id);
+        poolState.participantesStats[id] = { tiros: 0, pegados: 0, eliminada: false, secuencia: [] };
+        t.costoInscripciones = (t.costoInscripciones || 0) + poolState.inscripcion;
+        
+        cerrarModalSumarTiradorPool();
+        guardarEnLocalStorage();
+        actualizarInterfazPool();
+        showSnackbar(`Tirador ${t.nombre} sumado a la Pool`);
+      };
+
+      window.crearYSumarTiradorPool = function() {
+        const input = document.getElementById("input-nuevo-tirador-pool");
+        if (!input) return;
+        const nombre = input.value.trim();
+        if (!nombre) {
+          mostrarAlerta("Ingresá un nombre válido.");
+          return;
+        }
+        
+        let t = tiradores.find(x => x.nombre.toLowerCase() === nombre.toLowerCase() && !x.esGrupo);
+        if (!t) {
+          t = {
+            id: Date.now(),
+            nombre: nombre,
+            tiros: [],
+            costoInscripciones: 0
+          };
+          tiradores.push(t);
+          baseTiradores.push(t.nombre);
+        }
+        
+        input.value = "";
+        sumarTiradorExistenteAPool(t.id);
       };
 
       window.siguientePasoPool = function() {
@@ -327,6 +412,11 @@ function showSnackbar(mensaje) {
       };
 
       window.confirmarIniciarPool = function() {
+        if (!poolState.participantes || poolState.participantes.length < 2) {
+          mostrarAlerta("Seleccioná al menos 2 participantes para la pool.");
+          volverPaso1Pool();
+          return;
+        }
         const inscripcionInput = document.getElementById("input-pool-inscripcion");
         poolState.inscripcion = inscripcionInput ? parseFloat(inscripcionInput.value) || 0 : 0;
         poolState.activa = true;
@@ -363,28 +453,80 @@ function showSnackbar(mensaje) {
         mostrarConfirmacion("¿Seguro querés terminar la pool actual?", finalizarPool);
       };
 
-      window.finalizarPool = function() {
+      window.iniciarDesempatePool = function(empatados, maxPegados) {
+        poolState.esDesempate = true;
+        poolState.rondaDesempate = 1;
+        poolState.participantesDesempate = [...empatados];
+        poolState.indiceDesempateActual = 0;
+        poolState.tirosEnTandaActual = 0;
+        poolState.desempateStats = {};
+        
+        empatados.forEach(id => {
+          poolState.desempateStats[id] = { hitsEnRonda: 0 };
+        });
+        
+        const nombres = empatados.map(id => {
+          const t = tiradores.find(x => x.id === id);
+          return t ? t.nombre : "";
+        }).filter(Boolean).join(" y ");
+        
+        idSeleccionado = poolState.participantesDesempate[0];
+        
+        guardarEnLocalStorage();
+        actualizarInterfazPool();
+        showSnackbar(`¡Empate en ${maxPegados} aciertos! Desempate entre ${nombres} (${poolState.tandas} hél. por turno)`);
+      };
+
+      window.finalizarPool = function(ganadorForzadoId) {
         if (!poolState.activa) return;
         
-        let ganadorId = null;
+        const sinDisparos = !poolState.historialTiros || poolState.historialTiros.length === 0;
+        if (sinDisparos) {
+          poolState.participantes.forEach(id => {
+            const t = tiradores.find(x => x.id === id);
+            if (t) {
+              t.costoInscripciones = Math.max(0, (t.costoInscripciones || 0) - poolState.inscripcion);
+            }
+          });
+          
+          poolState.activa = false;
+          poolState.esDesempate = false;
+          
+          document.getElementById("pantalla-pool-activa").classList.add("hidden");
+          document.getElementById("pantalla-principal").classList.remove("hidden");
+          
+          guardarEnLocalStorage();
+          actualizarInterfaz();
+          actualizarFabIconoPool();
+          
+          showSnackbar("Pool finalizada con 0 disparos. No fue contabilizada.");
+          return;
+        }
+        
+        let ganadorId = ganadorForzadoId || null;
         let maxPegados = -1;
         
-        if (poolState.tipo === 'torneo') {
-          poolState.participantes.forEach(id => {
-            const stats = poolState.participantesStats[id];
-            if (stats.pegados > maxPegados) {
-              maxPegados = stats.pegados;
-              ganadorId = id;
-            }
-          });
+        if (!ganadorId) {
+          if (poolState.tipo === 'torneo') {
+            poolState.participantes.forEach(id => {
+              const stats = poolState.participantesStats[id];
+              if (stats.pegados > maxPegados) {
+                maxPegados = stats.pegados;
+                ganadorId = id;
+              }
+            });
+          } else {
+            poolState.participantes.forEach(id => {
+              const stats = poolState.participantesStats[id];
+              if (!stats.eliminada && stats.pegados > maxPegados) {
+                maxPegados = stats.pegados;
+                ganadorId = id;
+              }
+            });
+          }
         } else {
-          poolState.participantes.forEach(id => {
-            const stats = poolState.participantesStats[id];
-            if (!stats.eliminada && stats.pegados > maxPegados) {
-              maxPegados = stats.pegados;
-              ganadorId = id;
-            }
-          });
+          const stats = poolState.participantesStats[ganadorId];
+          if (stats) maxPegados = stats.pegados;
         }
         
         let nombreGanador = "Nadie";
@@ -393,12 +535,15 @@ function showSnackbar(mensaje) {
           if (t) nombreGanador = t.nombre;
         }
         
+        const esDesempateWin = poolState.esDesempate;
+        
         const poolRecord = {
           tipo: poolState.tipo,
           inscripcion: poolState.inscripcion,
           helices: poolState.helices,
           ganador: nombreGanador,
           maxPegados: maxPegados,
+          esDesempate: esDesempateWin,
           participantes: poolState.participantes.map(id => {
             const t = tiradores.find(x => x.id === id);
             return {
@@ -410,13 +555,20 @@ function showSnackbar(mensaje) {
         historialPools.push(poolRecord);
         
         poolState.activa = false;
+        poolState.esDesempate = false;
         
         document.getElementById("pantalla-pool-activa").classList.add("hidden");
         document.getElementById("pantalla-principal").classList.remove("hidden");
         
         guardarEnLocalStorage();
         actualizarInterfaz();
-        mostrarAlertaFinPool(`Ganador: ${nombreGanador} con ${maxPegados} aciertos.`, deshacerFinPool);
+        actualizarFabIconoPool();
+        
+        const msj = esDesempateWin 
+          ? `¡Ganador de la Pool en Desempate: ${nombreGanador} con ${maxPegados} aciertos!`
+          : `¡Ganador de la Pool: ${nombreGanador} con ${maxPegados} aciertos!`;
+          
+        mostrarAlertaFinPool(msj, deshacerFinPool);
       };
 
       window.deshacerFinPool = function() {
@@ -439,12 +591,36 @@ function showSnackbar(mensaje) {
         mostrarConfirmacion("¿Seguro querés terminar la pool actual?", finalizarPool);
       };
 
+      window.agregarTiradorPool = function() {
+        if (!poolState.activa || poolState.rondaActual !== 1 || poolState.esDesempate) return;
+        abrirModalSeleccionTirador((idTirador) => {
+          if (poolState.participantes.includes(idTirador)) return;
+          poolState.participantes.push(idTirador);
+          poolState.participantesStats[idTirador] = { tiros: 0, pegados: 0, eliminada: false, secuencia: [] };
+          const t = tiradores.find(x => x.id === idTirador);
+          if (t) t.costoInscripciones = (t.costoInscripciones || 0) + poolState.inscripcion;
+          guardarEnLocalStorage();
+          actualizarInterfazPool();
+        });
+      };
+
       window.actualizarInterfazPool = function() {
         if (!poolState.activa) return;
         
+        const wrapperSumar = document.getElementById("wrapper-btn-sumar-pool");
+        if (wrapperSumar) {
+          if (poolState.activa && poolState.rondaActual === 1 && !poolState.esDesempate) {
+            wrapperSumar.classList.remove("hidden");
+          } else {
+            wrapperSumar.classList.add("hidden");
+          }
+        }
+        
         const rTitle = document.getElementById("pool-activa-ronda");
         if (rTitle) {
-          if (poolState.tipo === 'torneo') {
+          if (poolState.esDesempate) {
+            rTitle.innerHTML = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg border border-yellow-500/40 animate-pulse font-bold">DESEMPATE - Ronda ${poolState.rondaDesempate} (${poolState.tandas} hél. por turno)</span>`;
+          } else if (poolState.tipo === 'torneo') {
             rTitle.textContent = `Torneo - Ronda ${poolState.rondaActual} (${poolState.tandas} hél. por turno)`;
           } else {
             rTitle.textContent = `Americana - Ronda ${poolState.rondaActual}`;
@@ -454,7 +630,7 @@ function showSnackbar(mensaje) {
         const tn = document.getElementById("pool-activa-tirador-nombre");
         if (tn) {
           const sel = tiradores.find(x => x.id === idSeleccionado);
-          tn.textContent = sel ? `🎯 ${sel.nombre}` : "---";
+          tn.textContent = sel ? sel.nombre : "---";
         }
         
         const bd = document.getElementById("btn-pool-deshacer");
@@ -475,8 +651,29 @@ function showSnackbar(mensaje) {
              let nameColor = "";
              let badgeBg = "";
              let pegadosColor = "";
+             let extraBadge = "";
              
-             if (stats.eliminada) {
+             if (poolState.esDesempate) {
+               const enDesempate = poolState.participantesDesempate && poolState.participantesDesempate.includes(id);
+               if (!enDesempate) {
+                 bgClass = currentTheme === "dark" ? "opacity-35 grayscale bg-gray-900 border-gray-800" : "opacity-35 grayscale bg-gray-200 border-gray-300";
+                 nameColor = "line-through text-gray-500";
+                 badgeBg = currentTheme === "dark" ? "bg-black/40" : "bg-gray-100";
+                 pegadosColor = currentTheme === "dark" ? "text-purple-500" : "text-gray-500";
+               } else if (id === idSeleccionado) {
+                 bgClass = currentTheme === "dark" ? "bg-purple-900/40 border-purple-500" : "bg-blue-50 border-blue-500 text-blue-900";
+                 nameColor = "text-white";
+                 badgeBg = currentTheme === "dark" ? "bg-black/40" : "bg-white/30";
+                 pegadosColor = currentTheme === "dark" ? "text-purple-500" : "text-white";
+                 extraBadge = `<span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded font-bold border border-yellow-500/30">🔥 Desempate</span>`;
+               } else {
+                 bgClass = currentTheme === "dark" ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200 shadow-sm";
+                 nameColor = currentTheme === "dark" ? "text-white" : "text-gray-900";
+                 badgeBg = currentTheme === "dark" ? "bg-black/40" : "bg-white/60";
+                 pegadosColor = currentTheme === "dark" ? "text-purple-500" : "text-orange-500";
+                 extraBadge = `<span class="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-semibold">Desempate</span>`;
+               }
+             } else if (stats.eliminada) {
                bgClass = currentTheme === "dark" ? "opacity-40 grayscale bg-gray-900 border-gray-800" : "opacity-40 grayscale bg-gray-200 border-gray-300";
                nameColor = "line-through text-gray-500";
                badgeBg = currentTheme === "dark" ? "bg-black/40" : "bg-gray-100";
@@ -502,7 +699,10 @@ function showSnackbar(mensaje) {
              let seqHTML = seqArray.map(p => p ? '🟢' : '🔴').join(' ');
              
              div.innerHTML = `
-               <div class="font-bold text-sm ${nameColor}">${t.nombre}</div>
+               <div class="flex items-center gap-2">
+                 <div class="font-bold text-sm ${nameColor}">${t.nombre}</div>
+                 ${extraBadge}
+               </div>
                <div class="flex items-center gap-2 text-xs font-mono tracking-widest ${badgeBg} px-2 py-1 rounded">
                   ${seqHTML || '---'} <span class="font-bold ${pegadosColor} ml-2">${stats.pegados}</span>
                </div>
@@ -513,11 +713,19 @@ function showSnackbar(mensaje) {
         
         const sig = document.getElementById("pool-activa-siguiente");
         if (sig) {
-           let sigIdx = poolState.indiceActual + 1;
-           if (sigIdx >= poolState.participantes.length) sigIdx = 0;
-           
-           if (poolState.tipo === 'americana') {
+           if (poolState.esDesempate) {
+             let sigIdx = poolState.indiceDesempateActual + 1;
+             if (sigIdx >= poolState.participantesDesempate.length) sigIdx = 0;
+             if (poolState.participantesDesempate.length > 1) {
+               const tSig = tiradores.find(x => x.id === poolState.participantesDesempate[sigIdx]);
+               sig.textContent = tSig ? tSig.nombre : "---";
+             } else {
+               sig.textContent = "---";
+             }
+           } else if (poolState.tipo === 'americana') {
              let loopCount = 0;
+             let sigIdx = poolState.indiceActual + 1;
+             if (sigIdx >= poolState.participantes.length) sigIdx = 0;
              while (poolState.participantesStats[poolState.participantes[sigIdx]].eliminada && loopCount < poolState.participantes.length) {
                sigIdx++;
                if (sigIdx >= poolState.participantes.length) sigIdx = 0;
@@ -545,10 +753,22 @@ function showSnackbar(mensaje) {
         
         idSeleccionado = last.id;
         const stats = poolState.participantesStats[last.id];
-        stats.tiros = last.oldTiros;
-        stats.pegados = last.oldPegados;
-        stats.secuencia = [...last.oldSecuencia];
+        if (stats) {
+          stats.tiros = last.oldTiros;
+          stats.pegados = last.oldPegados;
+          stats.secuencia = [...last.oldSecuencia];
+        }
         
+        if (last.esDesempate) {
+          poolState.esDesempate = true;
+          poolState.rondaDesempate = last.oldRondaDesempate;
+          poolState.participantesDesempate = [...last.oldParticipantesDesempate];
+          poolState.indiceDesempateActual = last.oldIndiceDesempate;
+          if (last.oldDesempateStats) poolState.desempateStats = JSON.parse(JSON.stringify(last.oldDesempateStats));
+        } else {
+          poolState.esDesempate = false;
+        }
+
         poolState.participantes.forEach(pid => {
           if (last.oldParticipantesStats && last.oldParticipantesStats[pid]) {
              poolState.participantesStats[pid].eliminada = last.oldParticipantesStats[pid].eliminada;
@@ -595,53 +815,156 @@ function showSnackbar(mensaje) {
         
         const stats = poolState.participantesStats[idSeleccionado];
         
-        const oldParticipantesStats = {};
-        poolState.participantes.forEach(pid => {
-          oldParticipantesStats[pid] = { eliminada: poolState.participantesStats[pid].eliminada, esperando: poolState.participantesStats[pid].esperando };
-        });
-        
-        poolState.historialTiros.push({
-           id: idSeleccionado,
-           pego: pego,
-           oldTiros: stats.tiros,
-           oldPegados: stats.pegados,
-           oldSecuencia: [...stats.secuencia],
-           oldMaxScore: poolState.maxScore,
-           oldIndice: poolState.indiceActual,
-           oldRonda: poolState.rondaActual,
-           oldTirosEnTanda: poolState.tirosEnTandaActual,
-           oldParticipantesStats: oldParticipantesStats
-        });
-        
-        t.tiros.push(pego);
-        stats.tiros++;
-        if (pego) stats.pegados++;
-        stats.secuencia.push(pego);
-        
         if (poolState.tipo === 'torneo') {
-          poolState.tirosEnTandaActual++;
-          if (poolState.tirosEnTandaActual >= poolState.tandas || stats.tiros >= poolState.helices) {
-            poolState.indiceActual++;
-            poolState.tirosEnTandaActual = 0;
+          if (poolState.esDesempate) {
+            const idActual = poolState.participantesDesempate[poolState.indiceDesempateActual];
+            const statsActual = poolState.participantesStats[idActual];
             
-            if (poolState.indiceActual >= poolState.participantes.length) {
-              poolState.indiceActual = 0;
-              poolState.rondaActual++;
+            t.tiros.push(pego);
+            statsActual.tiros++;
+            if (pego) statsActual.pegados++;
+            statsActual.secuencia.push(pego);
+            
+            if (!poolState.desempateStats) poolState.desempateStats = {};
+            if (!poolState.desempateStats[idActual]) poolState.desempateStats[idActual] = { hitsEnRonda: 0 };
+            if (pego) poolState.desempateStats[idActual].hitsEnRonda = (poolState.desempateStats[idActual].hitsEnRonda || 0) + 1;
+
+            poolState.historialTiros.push({
+               id: idActual,
+               pego: pego,
+               esDesempate: true,
+               oldTiros: statsActual.tiros - 1,
+               oldPegados: statsActual.pegados - (pego ? 1 : 0),
+               oldSecuencia: statsActual.secuencia.slice(0, -1),
+               oldIndiceDesempate: poolState.indiceDesempateActual,
+               oldRondaDesempate: poolState.rondaDesempate,
+               oldTirosEnTanda: poolState.tirosEnTandaActual,
+               oldParticipantesDesempate: [...poolState.participantesDesempate],
+               oldDesempateStats: JSON.parse(JSON.stringify(poolState.desempateStats))
+            });
+
+            poolState.tirosEnTandaActual++;
+
+            if (poolState.tirosEnTandaActual >= poolState.tandas) {
+              poolState.indiceDesempateActual++;
+              poolState.tirosEnTandaActual = 0;
+
+              if (poolState.indiceDesempateActual >= poolState.participantesDesempate.length) {
+                let maxHitsInRound = -1;
+                poolState.participantesDesempate.forEach(pid => {
+                  const h = poolState.desempateStats[pid] ? poolState.desempateStats[pid].hitsEnRonda || 0 : 0;
+                  if (h > maxHitsInRound) maxHitsInRound = h;
+                });
+
+                const ganadoresDeRonda = poolState.participantesDesempate.filter(pid => {
+                  const h = poolState.desempateStats[pid] ? poolState.desempateStats[pid].hitsEnRonda || 0 : 0;
+                  return h === maxHitsInRound;
+                });
+
+                if (ganadoresDeRonda.length === 1) {
+                  const ganadorId = ganadoresDeRonda[0];
+                  finalizarPool(ganadorId);
+                  return;
+                } else {
+                  poolState.participantesDesempate = ganadoresDeRonda;
+                  poolState.rondaDesempate++;
+                  poolState.indiceDesempateActual = 0;
+                  poolState.tirosEnTandaActual = 0;
+                  poolState.participantesDesempate.forEach(pid => {
+                    if (poolState.desempateStats[pid]) poolState.desempateStats[pid].hitsEnRonda = 0;
+                  });
+                }
+              }
             }
-            
-            idSeleccionado = poolState.participantes[poolState.indiceActual];
-            
-            let todosTerminaron = true;
-            poolState.participantes.forEach(id => {
-              if (poolState.participantesStats[id].tiros < poolState.helices) todosTerminaron = false;
+
+            idSeleccionado = poolState.participantesDesempate[poolState.indiceDesempateActual];
+
+          } else {
+            const oldParticipantesStats = {};
+            poolState.participantes.forEach(pid => {
+              oldParticipantesStats[pid] = { eliminada: poolState.participantesStats[pid].eliminada, esperando: poolState.participantesStats[pid].esperando };
             });
             
-            if (todosTerminaron) {
-              finalizarPool();
-              return;
+            poolState.historialTiros.push({
+               id: idSeleccionado,
+               pego: pego,
+               esDesempate: false,
+               oldTiros: stats.tiros,
+               oldPegados: stats.pegados,
+               oldSecuencia: [...stats.secuencia],
+               oldMaxScore: poolState.maxScore,
+               oldIndice: poolState.indiceActual,
+               oldRonda: poolState.rondaActual,
+               oldTirosEnTanda: poolState.tirosEnTandaActual,
+               oldParticipantesStats: oldParticipantesStats
+            });
+            
+            t.tiros.push(pego);
+            stats.tiros++;
+            if (pego) stats.pegados++;
+            stats.secuencia.push(pego);
+            
+            poolState.tirosEnTandaActual++;
+            if (poolState.tirosEnTandaActual >= poolState.tandas || stats.tiros >= poolState.helices) {
+              poolState.indiceActual++;
+              poolState.tirosEnTandaActual = 0;
+              
+              if (poolState.indiceActual >= poolState.participantes.length) {
+                poolState.indiceActual = 0;
+                poolState.rondaActual++;
+              }
+              
+              idSeleccionado = poolState.participantes[poolState.indiceActual];
+              
+              let todosTerminaron = true;
+              poolState.participantes.forEach(id => {
+                if (poolState.participantesStats[id].tiros < poolState.helices) todosTerminaron = false;
+              });
+              
+              if (todosTerminaron) {
+                let maxPegados = -1;
+                poolState.participantes.forEach(id => {
+                  const s = poolState.participantesStats[id];
+                  if (s.pegados > maxPegados) maxPegados = s.pegados;
+                });
+                
+                const empatados = poolState.participantes.filter(id => poolState.participantesStats[id].pegados === maxPegados);
+                
+                if (empatados.length > 1) {
+                  iniciarDesempatePool(empatados, maxPegados);
+                  return;
+                } else {
+                  finalizarPool();
+                  return;
+                }
+              }
             }
           }
         } else {
+          const oldParticipantesStats = {};
+          poolState.participantes.forEach(pid => {
+            oldParticipantesStats[pid] = { eliminada: poolState.participantesStats[pid].eliminada, esperando: poolState.participantesStats[pid].esperando };
+          });
+          
+          poolState.historialTiros.push({
+             id: idSeleccionado,
+             pego: pego,
+             esDesempate: false,
+             oldTiros: stats.tiros,
+             oldPegados: stats.pegados,
+             oldSecuencia: [...stats.secuencia],
+             oldMaxScore: poolState.maxScore,
+             oldIndice: poolState.indiceActual,
+             oldRonda: poolState.rondaActual,
+             oldTirosEnTanda: poolState.tirosEnTandaActual,
+             oldParticipantesStats: oldParticipantesStats
+          });
+          
+          t.tiros.push(pego);
+          stats.tiros++;
+          if (pego) stats.pegados++;
+          stats.secuencia.push(pego);
+          
           if (pego) {
             poolState.tirosEnTandaActual++;
             if (stats.pegados > poolState.maxScore) {
@@ -677,6 +1000,7 @@ function showSnackbar(mensaje) {
         
         guardarEnLocalStorage();
         actualizarInterfazPool();
+        mostrarFeedbackVisual(pego);
         triggerVibration(pego);
         playSound(pego);
       };
@@ -704,6 +1028,7 @@ window.restaurarEstadoDOM = function() {
       if(poolActiva) poolActiva.classList.add("hidden");
     }
     actualizarInterfaz();
+    actualizarBottomTabBar("planilla");
     const sb = document.getElementById('snackbar-undo');
     if(sb) sb.classList.add('translate-y-24', 'opacity-0');
   }
@@ -807,6 +1132,138 @@ window.onload = function () {
         }
       };
 
+      function actualizarFabIconoPool() {
+        const fabBtn = document.getElementById("btn-fab-pool");
+        if (!fabBtn) return;
+        const poolActivaEl = document.getElementById("pantalla-pool-activa");
+        const isPoolVisible = poolActivaEl && !poolActivaEl.classList.contains("hidden");
+        
+        if (poolState && poolState.activa) {
+          if (isPoolVisible) {
+            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>`;
+            fabBtn.title = "Cambiar a Pedana General";
+          } else {
+            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H8v2h8v-2h-1c-.55 0-1-.45-1-1v-2.34"/><path d="M18 4H6v7a6 6 0 0 0 12 0V4z"/></svg>`;
+            fabBtn.title = "Cambiar a Pool Activa";
+          }
+        } else {
+          fabBtn.innerHTML = `<svg id="icono-fab-plus" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m-8-8h16"></path></svg>`;
+          fabBtn.title = "Opciones";
+        }
+      }
+
+      window.toggleMenuFab = function() {
+        if (poolState && poolState.activa) {
+          const poolActivaEl = document.getElementById("pantalla-pool-activa");
+          const isPoolVisible = poolActivaEl && !poolActivaEl.classList.contains("hidden");
+          
+          if (isPoolVisible) {
+            mostrarPedanaGeneral();
+          } else {
+            mostrarPoolActiva();
+          }
+          return;
+        }
+
+        const menu = document.getElementById("menu-fab-opciones");
+        const icono = document.getElementById("icono-fab-plus");
+        if (!menu) return;
+        const isHidden = menu.classList.contains("hidden");
+        if (isHidden) {
+          menu.classList.remove("hidden");
+          menu.classList.add("flex");
+          if (icono) icono.classList.add("rotate-45");
+        } else {
+          menu.classList.add("hidden");
+          menu.classList.remove("flex");
+          if (icono) icono.classList.remove("rotate-45");
+        }
+      };
+
+      window.cerrarMenuFab = function() {
+        const menu = document.getElementById("menu-fab-opciones");
+        const icono = document.getElementById("icono-fab-plus");
+        if (menu) {
+          menu.classList.add("hidden");
+          menu.classList.remove("flex");
+        }
+        if (icono) icono.classList.remove("rotate-45");
+      };
+
+      document.addEventListener("click", (e) => {
+        const wrapper = document.getElementById("wrapper-fab-pool");
+        if (wrapper && !wrapper.contains(e.target)) {
+          cerrarMenuFab();
+        }
+      });
+
+      function actualizarBottomTabBar(activeTab) {
+        const bar = document.getElementById("bottom-tab-bar");
+        if (!bar) return;
+
+        cerrarMenuFab();
+
+        const authScreen = document.getElementById("pantalla-auth");
+        const isAuthVisible = authScreen && !authScreen.classList.contains("hidden");
+
+        if (!authUser || isAuthVisible) {
+          bar.classList.add("hidden");
+          bar.classList.remove("flex");
+          return;
+        } else {
+          bar.classList.remove("hidden");
+          bar.classList.add("flex");
+        }
+
+        const fab = document.getElementById("wrapper-fab-pool");
+        if (fab) {
+          if (activeTab === "planilla") {
+            fab.classList.remove("hidden");
+            fab.classList.add("flex");
+            actualizarFabIconoPool();
+          } else {
+            fab.classList.add("hidden");
+            fab.classList.remove("flex");
+          }
+        }
+
+        const tabs = ["inicio", "planilla", "historial", "ajustes"];
+        tabs.forEach((tab) => {
+          const btn = document.getElementById(`tab-btn-${tab}`);
+          if (btn) {
+            if (tab === activeTab) {
+              btn.classList.add("tab-item-active");
+              btn.classList.remove("text-gray-500", "dark:text-gray-400");
+            } else {
+              btn.classList.remove("tab-item-active");
+              btn.classList.add("text-gray-500", "dark:text-gray-400");
+            }
+          }
+        });
+      }
+
+      function navegarTab(tabName) {
+        if (tabName === "inicio") {
+          mostrarPantallaInicio();
+        } else if (tabName === "planilla") {
+          const tieneSerie = (tiradores && tiradores.length > 0) || (poolState && poolState.activa);
+          if (tieneSerie) {
+            continuarSerieActual();
+          } else {
+            mostrarConfirmacion(
+              "No hay una serie activa en curso. ¿Deseas iniciar una nueva serie?",
+              function () {
+                iniciarNuevaSerie();
+              }
+            );
+          }
+        } else if (tabName === "historial") {
+          mostrarPantallaHistorial();
+        } else if (tabName === "ajustes") {
+          mostrarPantallaConfiguracion();
+        }
+      }
+
       function mostrarPantallaInicio() {
         estadoApp = "inicio";
         guardarEnLocalStorage();
@@ -820,6 +1277,8 @@ window.onload = function () {
         document.getElementById("pantalla-inicio").classList.remove("hidden");
         document.getElementById("pantalla-inicio").classList.add("flex");
         
+        actualizarBottomTabBar("inicio");
+
         const btnContinuar = document.getElementById("btn-continuar-serie");
         if (btnContinuar) {
           if (tiradores.length > 0) {
@@ -841,25 +1300,20 @@ window.onload = function () {
         
         document.getElementById("pantalla-inicio").classList.add("hidden");
         document.getElementById("pantalla-inicio").classList.remove("flex");
+        document.getElementById("pantalla-historial").classList.add("hidden");
+        document.getElementById("pantalla-historial").classList.remove("flex");
+        document.getElementById("pantalla-configuracion").classList.add("hidden");
+        document.getElementById("pantalla-configuracion").classList.remove("flex");
         document.getElementById("pantalla-principal").classList.remove("hidden");
         if (poolState) poolState.activa = false;
         const poolActiva = document.getElementById("pantalla-pool-activa");
         if(poolActiva) poolActiva.classList.add("hidden");
         
         document.getElementById("panel-resultados").classList.add("hidden");
-        
-        const pConf = document.getElementById("panel-configuracion");
-        if (pConf) pConf.classList.add("hidden");
-        
-        const pPantConf = document.getElementById("pantalla-configuracion");
-        if (pPantConf) {
-          pPantConf.classList.add("hidden");
-          pPantConf.classList.remove("flex");
-        }
-
         document.getElementById("panel-registro").classList.remove("hidden");
         
         actualizarInterfaz();
+        actualizarBottomTabBar("planilla");
       }
 
       function continuarSerieActual() {
@@ -867,6 +1321,10 @@ window.onload = function () {
         guardarEnLocalStorage();
         document.getElementById("pantalla-inicio").classList.add("hidden");
         document.getElementById("pantalla-inicio").classList.remove("flex");
+        document.getElementById("pantalla-historial").classList.add("hidden");
+        document.getElementById("pantalla-historial").classList.remove("flex");
+        document.getElementById("pantalla-configuracion").classList.add("hidden");
+        document.getElementById("pantalla-configuracion").classList.remove("flex");
         
         if (poolState && poolState.activa) {
           document.getElementById("pantalla-principal").classList.add("hidden");
@@ -878,13 +1336,11 @@ window.onload = function () {
           if(poolActiva) poolActiva.classList.add("hidden");
         }
         
-        document.getElementById("pantalla-configuracion").classList.add("hidden");
-        document.getElementById("pantalla-configuracion").classList.remove("flex");
-        
         document.getElementById("panel-resultados").classList.add("hidden");
         document.getElementById("panel-registro").classList.remove("hidden");
         
         actualizarInterfaz();
+        actualizarBottomTabBar("planilla");
       }
 
       function verHistorialDesdeInicio() {
@@ -906,6 +1362,7 @@ window.onload = function () {
         document.getElementById("pantalla-historial").classList.add("flex");
         
         renderizarHistorialPantalla();
+        actualizarBottomTabBar("historial");
       }
 
       function guardarEnLocalStorage() {
@@ -937,6 +1394,7 @@ window.onload = function () {
         
         document.getElementById("pantalla-configuracion").classList.remove("hidden");
         document.getElementById("pantalla-configuracion").classList.add("flex");
+        actualizarBottomTabBar("ajustes");
       }
       function cerrarPantallaConfiguracion() {
         document.getElementById("pantalla-configuracion").classList.add("hidden");
@@ -1302,7 +1760,10 @@ window.onload = function () {
         );
       }
       function seleccionarTirador(id) {
-        if (multiModeActivo || poolState.activa) return;
+        if (multiModeActivo) return;
+        const poolActivaEl = document.getElementById("pantalla-pool-activa");
+        const poolActivaVisible = poolActivaEl && !poolActivaEl.classList.contains("hidden");
+        if (poolActivaVisible) return;
         if (idSeleccionado === id) {
           idHistorialDesplegado = idHistorialDesplegado === id ? null : id;
         } else {
@@ -1316,30 +1777,34 @@ window.onload = function () {
           }
 
       function mostrarFeedbackVisual(pego) {
-        const card = document.getElementById("card-tiro");
-        if (!card) return;
+        const cards = [
+          document.getElementById("card-tiro"),
+          document.getElementById("card-tiro-pool")
+        ].filter(Boolean);
 
-        card.style.transition =
-          "background-color 0.3s ease, border-color 0.3s ease";
+        cards.forEach(card => {
+          card.style.transition =
+            "background-color 0.3s ease, border-color 0.3s ease";
 
-        if (pego) {
-          card.style.backgroundColor =
-            currentTheme === "dark"
-              ? "rgba(20, 83, 45, 0.6)"
-              : "rgba(187, 247, 208, 0.8)";
-          card.style.borderColor = "#22c55e";
-        } else {
-          card.style.backgroundColor =
-            currentTheme === "dark"
-              ? "rgba(127, 29, 29, 0.6)"
-              : "rgba(254, 202, 202, 0.8)";
-          card.style.borderColor = "#ef4444";
-        }
+          if (pego) {
+            card.style.backgroundColor =
+              currentTheme === "dark"
+                ? "rgba(20, 83, 45, 0.6)"
+                : "rgba(187, 247, 208, 0.8)";
+            card.style.borderColor = "#22c55e";
+          } else {
+            card.style.backgroundColor =
+              currentTheme === "dark"
+                ? "rgba(127, 29, 29, 0.6)"
+                : "rgba(254, 202, 202, 0.8)";
+            card.style.borderColor = "#ef4444";
+          }
 
-        setTimeout(() => {
-          card.style.backgroundColor = "";
-          card.style.borderColor = "";
-        }, 400);
+          setTimeout(() => {
+            card.style.backgroundColor = "";
+            card.style.borderColor = "";
+          }, 400);
+        });
       }
 
       function registrarTiro(pego) {
@@ -1507,6 +1972,21 @@ window.onload = function () {
         if (indTot)
           indTot.textContent = `Total: ${Math.ceil(totalHelicesGlobal)}`;
 
+        const poolBanner = document.getElementById("pool-status-banner");
+        if (poolBanner) {
+          if (poolState && poolState.activa) {
+            poolBanner.classList.remove("hidden");
+            poolBanner.classList.add("flex");
+            const rInfo = document.getElementById("pool-ronda-info");
+            if (rInfo) {
+              rInfo.textContent = `🏆 Pool en curso (Ronda ${poolState.rondaActual})`;
+            }
+          } else {
+            poolBanner.classList.add("hidden");
+            poolBanner.classList.remove("flex");
+          }
+        }
+
         const lista = document.getElementById("lista-tiradores");
         if (!lista) return;
         lista.innerHTML = "";
@@ -1525,9 +2005,15 @@ window.onload = function () {
           if (!multiModeActivo) {
             idiv.className = `p-3 rounded-lg border cursor-pointer ${esS ? (currentTheme === "dark" ? "bg-blue-950/40 border-blue-500 text-blue-200" : "bg-blue-50 border-blue-500 text-blue-900") : currentTheme === "dark" ? "bg-gray-900/60 border-gray-700 text-gray-300" : "bg-gray-50 border-gray-200 text-gray-700"}`;
             idiv.onclick = () => seleccionarTirador(t.id);
-            idiv.onclick = () => seleccionarTirador(t.id);
+            const editBtnClass = esS 
+              ? "p-1.5 rounded-md bg-black/20 hover:bg-black/40 text-white transition-colors cursor-pointer flex items-center justify-center"
+              : (currentTheme === "dark" ? "p-1.5 text-gray-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center" : "p-1.5 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer flex items-center justify-center");
 
-            idiv.innerHTML = `<div class="flex justify-between items-center w-full"><div class="truncate font-semibold text-sm flex-1 mr-2">${t.nombre}</div><div class="flex items-center gap-2"><span class="text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded ${currentTheme === "dark" ? "bg-gray-800 text-gray-400" : "bg-gray-200 text-gray-600"}">H: ${t.tiros.length} | P:${s.pegados}</span><button onclick="editarTirador(${t.id}, event)" class="text-xs">✏️</button><button onclick="eliminarTirador(${t.id}, event)" class="text-xs">❌</button></div></div>`;
+            const deleteBtnClass = esS 
+              ? "p-1.5 rounded-md bg-red-700/90 hover:bg-red-800 text-white transition-colors cursor-pointer flex items-center justify-center"
+              : (currentTheme === "dark" ? "p-1.5 text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center justify-center" : "p-1.5 text-red-600 hover:text-red-700 transition-colors cursor-pointer flex items-center justify-center");
+
+            idiv.innerHTML = `<div class="flex justify-between items-center w-full"><div class="truncate font-semibold text-sm flex-1 mr-2">${t.nombre}</div><div class="flex items-center gap-2"><span class="text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded ${currentTheme === "dark" ? "bg-gray-800 text-gray-400" : (esS ? "bg-white/20 text-white" : "bg-gray-200 text-gray-600")}">H: ${t.tiros.length} | P:${s.pegados}</span><button onclick="editarTirador(${t.id}, event)" class="${editBtnClass}" title="Editar"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button><button onclick="eliminarTirador(${t.id}, event)" class="${deleteBtnClass}" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div></div>`;
             if (mH) {
               const ct =
                 t.tiros.length > 0
@@ -1536,7 +2022,7 @@ window.onload = function () {
               const hdiv = document.createElement("div");
               hdiv.className =
                 "mt-3 -mx-3 -mb-3 p-3 border-t border-gray-700/50 text-xs space-y-2 rounded-b-lg expanded-details";
-              hdiv.innerHTML = `<div class="tracking-widest overflow-x-auto py-0.5 font-mono">${ct}</div><div class="flex justify-between text-[11px] opacity-70"><span>Racha: 🔥 ${s.rachaActual} | Max: 🏆 ${s.rachaMaxima}</span><span>Total: $${s.costoTotal.toFixed(0)}</span></div><div class="grid grid-cols-2 gap-2 pt-1"><button onclick="imprimirReporteIndividual(${t.id}, event)" class="btn-pdf text-white text-[10px] py-1 rounded shadow-sm transition-colors">📄 PDF</button><button onclick="compartirWhatsAppIndividual(${t.id}, event)" class="btn-wpp text-white text-[10px] py-1 rounded shadow-sm transition-colors">💬 Wpp</button></div>`;
+              hdiv.innerHTML = `<div class="tracking-widest overflow-x-auto py-0.5 font-mono">${ct}</div><div class="flex justify-between text-[11px] opacity-70"><span>Racha: ${s.rachaActual} | Max: ${s.rachaMaxima}</span><span>Total: $${s.costoTotal.toFixed(0)}</span></div><div class="grid grid-cols-2 gap-2 pt-1"><button onclick="imprimirReporteIndividual(${t.id}, event)" class="btn-pdf text-white text-[10px] py-1 rounded shadow-sm transition-colors flex items-center justify-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg> PDF</button><button onclick="compartirWhatsAppIndividual(${t.id}, event)" class="btn-wpp text-white text-[10px] py-1 rounded shadow-sm transition-colors flex items-center justify-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 013 21c.287-.852.793-1.637 1.464-2.274C3.064 17.202 2.25 14.73 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg> Wpp</button></div>`;
               idiv.appendChild(hdiv);
             }
           } else {
@@ -1568,18 +2054,18 @@ window.onload = function () {
             const sel = tiradores.find((x) => x.id === idSeleccionado);
             if (sel) {
               const s = obtenerEstadisticas(sel);
-              tn.textContent = `🎯 ${sel.nombre}`;
+              tn.textContent = sel.nombre;
               bp.disabled = false;
               be.disabled = false;
               if (bd) bd.disabled = sel.tiros.length === 0;
               if (s.rachaActual > 0) {
-                br.textContent = `🔥 Racha: ${s.rachaActual}`;
+                br.textContent = `Racha: ${s.rachaActual}`;
                 br.classList.remove("hidden");
               } else {
                 br.classList.add("hidden");
               }
               if (s.rachaNegativaActual > 0) {
-                brNeg.textContent = `🧊 Racha: ${s.rachaNegativaActual}`;
+                brNeg.textContent = `Racha: ${s.rachaNegativaActual}`;
                 brNeg.classList.remove("hidden");
               } else {
                 brNeg.classList.add("hidden");
@@ -1612,7 +2098,7 @@ window.onload = function () {
               .map((x) => x.nombre)
               .sort()
               .join(" + ");
-            tn.textContent = `👥 ${ng}`;
+            tn.textContent = ng;
             bp.disabled = false;
             be.disabled = false;
             const ge = tiradores.find(
@@ -1631,9 +2117,9 @@ window.onload = function () {
               
               let html = "";
               if (rachaNeg > 0) {
-                html = `<div class="bg-blue-600/20 text-blue-300 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-blue-600/40">🧊 Racha Grupo: ${rachaNeg}</div>`;
+                html = `<div class="bg-blue-600/20 text-blue-300 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-blue-600/40">Racha Grupo: ${rachaNeg}</div>`;
               } else {
-                html = `<div class="bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40 ${rachaAct > 0 ? 'animate-pulse' : ''}">🔥 Racha Grupo: ${rachaAct}</div>`;
+                html = `<div class="bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40 ${rachaAct > 0 ? 'animate-pulse' : ''}">Racha Grupo: ${rachaAct}</div>`;
               }
               
               grd.innerHTML = html;
@@ -1754,12 +2240,27 @@ window.onload = function () {
       }
 
       function mostrarPantallaResultados() {
+        if (poolState && poolState.activa) {
+          mostrarAlerta("No podés finalizar la sesión mientras haya una Pool en curso. Debés terminar la Pool primero.");
+          return;
+        }
+        document.getElementById("pantalla-inicio").classList.add("hidden");
+        document.getElementById("pantalla-inicio").classList.remove("flex");
+        document.getElementById("pantalla-historial").classList.add("hidden");
+        document.getElementById("pantalla-historial").classList.remove("flex");
+        document.getElementById("pantalla-configuracion").classList.add("hidden");
+        document.getElementById("pantalla-configuracion").classList.remove("flex");
+        document.getElementById("pantalla-principal").classList.remove("hidden");
+        const poolActiva = document.getElementById("pantalla-pool-activa");
+        if(poolActiva) poolActiva.classList.add("hidden");
+
         const pReg = document.getElementById("panel-registro");
         const pConf = document.getElementById("panel-configuracion");
         const pRes = document.getElementById("panel-resultados");
         if (pReg) pReg.classList.add("hidden");
         if (pConf) pConf.classList.add("hidden");
         if (pRes) pRes.classList.remove("hidden");
+        actualizarBottomTabBar("planilla");
         
         const req = document.getElementById("podio-requisito-texto");
         if (req)
@@ -1781,14 +2282,17 @@ window.onload = function () {
           document.getElementById("col-dinamica-header").textContent =
             "P. Totales";
         }
-        if (mostrarDinero) {
-          document.getElementById("btn-toggle-dinero").textContent = "👁️";
-          if (cFin) cFin.classList.remove("hidden");
-          if (thD) thD.classList.remove("hidden");
-        } else {
-          document.getElementById("btn-toggle-dinero").textContent = "🙈";
-          if (cFin) cFin.classList.add("hidden");
-          if (thD) thD.classList.add("hidden");
+        const btnToggle = document.getElementById("btn-toggle-dinero");
+        if (btnToggle) {
+          if (mostrarDinero) {
+            btnToggle.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 hover:text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+            if (cFin) cFin.classList.remove("hidden");
+            if (thD) thD.classList.remove("hidden");
+          } else {
+            btnToggle.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>`;
+            if (cFin) cFin.classList.add("hidden");
+            if (thD) thD.classList.add("hidden");
+          }
         }
 
         const ord = obtenerListaOrdenada(false);
@@ -2452,6 +2956,31 @@ window.onload = function () {
       }
     
 // Expose functions to window for inline event handlers
+window.mostrarPedanaGeneral = function() {
+  const pPool = document.getElementById("pantalla-pool-activa");
+  if (pPool) pPool.classList.add("hidden");
+  
+  document.getElementById("pantalla-principal").classList.remove("hidden");
+  document.getElementById("panel-resultados").classList.add("hidden");
+  document.getElementById("panel-registro").classList.remove("hidden");
+  
+  actualizarInterfaz();
+  actualizarBottomTabBar("planilla");
+  actualizarFabIconoPool();
+};
+
+window.mostrarPoolActiva = function() {
+  if (!poolState || !poolState.activa) return;
+  
+  document.getElementById("pantalla-principal").classList.add("hidden");
+  const pPool = document.getElementById("pantalla-pool-activa");
+  if (pPool) pPool.classList.remove("hidden");
+  
+  actualizarInterfazPool();
+  actualizarBottomTabBar("planilla");
+  actualizarFabIconoPool();
+};
+
 window.mostrarPantallaConfiguracion = mostrarPantallaConfiguracion;
 window.toggleMostrarDinero = toggleMostrarDinero;
 window.irAPantallaPrincipal = irAPantallaPrincipal;
@@ -2496,6 +3025,8 @@ window.toggleFullScreen = toggleFullScreen;
 window.showSnackbar = showSnackbar;
 window.exportarDatos = exportarDatos;
 window.importarDatos = importarDatos;
+window.navegarTab = navegarTab;
+window.actualizarBottomTabBar = actualizarBottomTabBar;
 
 
 
@@ -2519,6 +3050,7 @@ async function initAuth() {
     const auth = document.getElementById('pantalla-auth');
     auth.classList.remove('hidden');
     auth.classList.add('flex');
+    actualizarBottomTabBar('');
   };
 
   const showAppScreens = () => {
@@ -2598,13 +3130,22 @@ window.toggleAuthMode = function() {
   isRegistering = !isRegistering;
   const btn = document.getElementById('btn-login');
   const toggleBtn = document.getElementById('btn-toggle-auth');
+  const titulo = document.getElementById('auth-titulo');
+  const subtitulo = document.getElementById('auth-subtitulo');
+  const togglePregunta = document.getElementById('auth-toggle-pregunta');
   
   if (isRegistering) {
-    btn.textContent = 'Crear Cuenta';
-    toggleBtn.textContent = 'Ingresar';
+    if (btn) btn.textContent = 'Crear Cuenta';
+    if (toggleBtn) toggleBtn.textContent = 'Ingresar';
+    if (titulo) titulo.textContent = 'Crear Cuenta';
+    if (subtitulo) subtitulo.textContent = 'Registrate para guardar y sincronizar tu historial de tiro en la nube.';
+    if (togglePregunta) togglePregunta.textContent = '¿Ya tenés una cuenta?';
   } else {
-    btn.textContent = 'Ingresar';
-    toggleBtn.textContent = 'Registrate';
+    if (btn) btn.textContent = 'Ingresar';
+    if (toggleBtn) toggleBtn.textContent = 'Registrate';
+    if (titulo) titulo.textContent = 'Iniciar Sesión';
+    if (subtitulo) subtitulo.textContent = 'Ingresá a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.';
+    if (togglePregunta) togglePregunta.textContent = '¿No tenés cuenta?';
   }
 }
 

@@ -18,12 +18,7 @@
       id="main-header"
       class="main-header hidden"
     >
-      <button
-        onclick="mostrarPantallaConfiguracion()"
-        class="text-white hover:text-yellow-300 transition text-xl md:text-2xl"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-      </button>
+      <div class="w-6 h-6"></div>
       <div class="flex flex-col items-center">
         <h1
           onclick="irAPantallaPrincipal()"
@@ -41,37 +36,73 @@
       </button>
     </header>
 
-    <!-- Pantalla de Login -->
-    <div id="pantalla-auth" class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-6 z-30">
-      <div class="text-center space-y-4">
-        <h2 class="text-3xl font-black uppercase tracking-wider text-blue-900 dark:text-yellow-400">
+    <!-- Pantalla de Login / Registro -->
+    <div id="pantalla-auth" class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-6 z-30 animate-fade-in my-auto min-h-[80vh]">
+      <!-- Brand Logo / Propeller Icon -->
+      <div class="text-center space-y-3">
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-600/10 dark:bg-blue-500/10 border border-blue-500/20 shadow-2xl p-3 relative overflow-hidden mb-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-16 h-16 animate-[spin_4s_linear_infinite] drop-shadow-md">
+            <defs>
+              <mask id="authHoleMask">
+                <rect width="100" height="100" fill="white"/>
+                <circle cx="50" cy="50" r="5" fill="black"/>
+              </mask>
+            </defs>
+            <g mask="url(#authHoleMask)">
+              <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
+              <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
+              <circle cx="50" cy="50" r="28" fill="#F8F9FA" stroke="black" stroke-width="1" />
+              <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
+            </g>
+          </svg>
+        </div>
+        <h2 id="auth-titulo" class="text-3xl font-black uppercase tracking-wider text-blue-900 dark:text-yellow-400">
           Iniciar Sesión
         </h2>
-        <p class="text-gray-600 dark:text-gray-300 text-sm max-w-xs mx-auto">
-          Ingresa a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.
+        <p id="auth-subtitulo" class="text-gray-600 dark:text-gray-300 text-xs md:text-sm max-w-xs mx-auto leading-relaxed">
+          Ingresá a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.
         </p>
       </div>
 
-      <div class="w-full max-w-sm space-y-4 card-base shadow-xl p-6">
+      <!-- Auth Form Card -->
+      <div class="w-full max-w-sm space-y-5 card-base shadow-2xl p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-gray-700/80">
         <form id="form-auth" class="space-y-4">
+          <!-- Email Input -->
           <div>
-            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email</label>
-            <input type="email" id="auth-email" required class="input-base">
+            <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Email</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              </span>
+              <input type="email" id="auth-email" required placeholder="tu@email.com" class="input-base pl-11 py-3 text-sm">
+            </div>
           </div>
+
+          <!-- Password Input -->
           <div>
-            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Contraseña</label>
-            <input type="password" id="auth-password" required minlength="6" class="input-base">
+            <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Contraseña</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </span>
+              <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" class="input-base pl-11 py-3 text-sm">
+            </div>
           </div>
           
           <div class="pt-2">
-            <button type="submit" id="btn-login" class="btn-primary w-full py-3">
+            <button type="submit" id="btn-login" class="btn-primary w-full py-3.5 text-base font-bold shadow-lg hover:shadow-xl transition-all cursor-pointer">
               Ingresar
             </button>
           </div>
-          <div class="text-center mt-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              ¿No tenés cuenta? 
-              <button type="button" id="btn-toggle-auth" class="text-blue-600 dark:text-yellow-400 font-bold hover:underline">Registrate</button>
+
+          <div class="text-center pt-2 border-t border-gray-200 dark:border-gray-700/60 mt-4">
+            <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+              <span id="auth-toggle-pregunta">¿No tenés cuenta?</span> 
+              <button type="button" id="btn-toggle-auth" onclick="toggleAuthMode()" class="text-blue-600 dark:text-yellow-400 font-bold hover:underline cursor-pointer ml-1">Registrate</button>
             </p>
           </div>
         </form>
@@ -79,7 +110,7 @@
     </div>
 
     <!-- Pantalla de Inicio -->
-    <div id="pantalla-inicio" class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-12 animate-fade-in z-30">
+    <div id="pantalla-inicio" class="hidden flex flex-col flex-1 items-center justify-center p-6 pb-28 space-y-12 animate-fade-in z-30">
       <div class="text-center space-y-4">
         <div class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gray-50 dark:bg-gray-800 mb-6 shadow-xl border-4 border-white dark:border-gray-700 relative overflow-hidden">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-24 h-24 animate-[spin_3s_linear_infinite] drop-shadow-md">
@@ -122,26 +153,19 @@
           onclick="iniciarNuevaSerie()" 
           class="btn-primary w-full py-4 text-lg hover:-translate-y-1 hover:shadow-2xl"
         >
-          <span>🎯</span> Nueva Serie
-        </button>
-        
-        <button 
-          onclick="verHistorialDesdeInicio()" 
-          class="btn-outline w-full py-4"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg> Cargar Sesión Anterior
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="5" />
+            <circle cx="12" cy="12" r="1" />
+          </svg>
+          <span>Nueva Serie</span>
         </button>
       </div>
     </div>
 
     <!-- Pantalla de Historial Dedicada -->
-    <div id="pantalla-historial" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-20 mt-4 space-y-6">
+    <div id="pantalla-historial" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-40 mt-4 space-y-6">
       <div class="flex items-center gap-4 border-b border-gray-700/50 pb-4">
-        <button onclick="irAPantallaPrincipal()" class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 h-9 w-9 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
         <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide">
           Historial de Sesiones
         </h2>
@@ -159,13 +183,8 @@
     </div>
 
     <!-- Pantalla de Configuración Dedicada -->
-    <div id="pantalla-configuracion" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-20 mt-4 space-y-6">
+    <div id="pantalla-configuracion" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-40 mt-4 space-y-6">
       <div class="flex items-center gap-4 border-b border-gray-200 dark:border-gray-700/50 pb-4">
-        <button onclick="cerrarPantallaConfiguracion()" class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 h-9 w-9 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
         <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide">
           Configuración
         </h2>
@@ -249,7 +268,7 @@
 
     <main
       id="pantalla-principal"
-      class="hidden flex-1 p-4 md:p-6 max-w-md md:max-w-xl mx-auto w-full space-y-6 md:space-y-8 pb-8"
+      class="hidden flex-1 p-4 md:p-6 max-w-md md:max-w-xl mx-auto w-full space-y-6 md:space-y-8 pb-40"
     >
 
       <div id="panel-registro" class="space-y-6 md:space-y-8">
@@ -296,7 +315,7 @@
         </section>
         <section
           id="card-tiro"
-          class="card-dark p-4 md:p-5 rounded-xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border border-gray-700/50 text-center space-y-4 md:space-y-6 sticky bottom-4 z-40 backdrop-blur-xl bg-opacity-95"
+          class="card-dark p-4 md:p-5 rounded-xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border border-gray-700/50 text-center space-y-4 md:space-y-6 sticky bottom-20 z-40 backdrop-blur-xl bg-opacity-95"
         >
           <div class="flex justify-between items-center px-2">
             <div class="flex items-center gap-2">
@@ -317,13 +336,13 @@
                 id="indicador-racha-negativa"
                 class="hidden bg-blue-600/20 text-blue-300 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-blue-600/40"
               >
-                🧊 Racha: 0
+                Racha: 0
               </div>
               <div
                 id="indicador-racha"
                 class="hidden bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40"
               >
-                🔥 Racha: 0
+                Racha: 0
               </div>
               <button onclick="deshacerUltimoTiro()" id="btn-deshacer-main" class="w-8 h-8 md:w-10 md:h-10 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90" disabled>
                 <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
@@ -337,11 +356,6 @@
             Seleccioná un tirador
           </div>
           <div id="grupo-racha-display" class="hidden flex justify-center gap-2 mt-1 mb-2"></div>
-
-          <div id="pool-status-banner" class="hidden bg-purple-900/40 border border-purple-500/50 text-purple-200 text-xs font-bold rounded p-2 mb-2 flex justify-between items-center">
-            <span id="pool-ronda-info">Pool: Ronda 1</span>
-            <button onclick="forzarFinPool()" class="text-[10px] bg-red-600/80 px-2 py-0.5 rounded text-white hover:bg-red-500">Terminar</button>
-          </div>
 
           <div
             id="multimode-sequence-display"
@@ -373,24 +387,6 @@
           </div>
           <!-- Botón deshacer movido al Snackbar -->
         </section>
-        <button
-          onclick="verPodioParcial()"
-          class="w-full bg-lime-200 hover:bg-lime-300 border border-lime-400 text-gray-950 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-yellow-400 font-bold py-2.5 md:py-3 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow active:scale-95 flex items-center justify-center gap-2 transition-colors"
-        >
-          📊 Ver Clasificación Parcial
-        </button>
-        <button
-          onclick="abrirModalPool()"
-          class="w-full bg-lime-400 hover:bg-lime-500 border border-lime-600 text-gray-950 dark:bg-purple-600 dark:hover:bg-purple-500 dark:border-transparent dark:text-white font-bold py-2.5 md:py-3 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow active:scale-95 flex items-center justify-center gap-2 transition-colors"
-        >
-          🏆 Iniciar Pool
-        </button>
-        <button
-          onclick="finalizarSesion()"
-          class="w-full bg-yellow-400 hover:bg-yellow-500 border border-yellow-600 text-gray-950 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:border-transparent dark:text-gray-950 font-extrabold py-3.5 md:py-4 rounded-xl text-center uppercase tracking-wider shadow-lg active:scale-95 md:text-lg mt-2 transition-colors"
-        >
-          🏁 Finalizar Sesión
-        </button>
       </div>
 
       <div
@@ -444,9 +440,13 @@
                 <button
                   onclick="toggleMostrarDinero()"
                   id="btn-toggle-dinero"
-                  class="text-sm p-1 hover:scale-115 transition-transform select-none"
+                  class="p-1 hover:scale-110 transition-transform select-none text-gray-400 hover:text-white"
+                  title="Mostrar/Ocultar montos"
                 >
-                  👁️
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </button>
               </div>
               <div
@@ -544,15 +544,21 @@
         <div class="space-y-2 pt-2">
           <button
             onclick="compartirWhatsApp()"
-            class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base"
+            class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base cursor-pointer"
           >
-            💬 Compartir Resumen por WhatsApp
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 013 21c.287-.852.793-1.637 1.464-2.274C3.064 17.202 2.25 14.73 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+            </svg>
+            <span>Compartir Resumen por WhatsApp</span>
           </button>
           <button
             onclick="imprimirConSistemaNativo()"
-            class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base"
+            class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base cursor-pointer"
           >
-            📄 Guardar Reporte PDF General
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <span>Guardar Reporte PDF General</span>
           </button>
 
           <button
@@ -567,7 +573,7 @@
 
     <div
       id="modal-generico"
-      class="hidden modal-overlay"
+      class="hidden modal-overlay z-[200]"
     >
       <div
         class="modal-content max-w-sm text-center"
@@ -659,17 +665,17 @@
     </div>
 
     <!-- Pantalla Superpuesta: Pool Activa -->
-    <div id="pantalla-pool-activa" class="hidden w-full max-w-xl mx-auto p-4 md:p-6 space-y-6 flex-col relative z-30 animate-fade-in pb-env pb-24">
+    <div id="pantalla-pool-activa" class="hidden w-full max-w-xl mx-auto p-4 md:p-6 space-y-6 flex-col relative z-30 animate-fade-in pb-40">
       
       <!-- Card Superior: Header de la Pool & Siguiente Tirador -->
       <div class="card-base p-4 md:p-6 flex flex-col gap-4">
         <!-- Header -->
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center gap-2">
           <div>
             <h2 id="pool-activa-titulo" class="text-xl md:text-2xl font-black text-orange-500 dark:text-purple-400 uppercase tracking-wider leading-none">Pool en Curso</h2>
             <p id="pool-activa-ronda" class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-semibold mt-1">Ronda 1</p>
           </div>
-          <button onclick="terminarPoolManual()" class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-bold transition-colors">
+          <button onclick="terminarPoolManual()" class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer">
             Terminar Pool
           </button>
         </div>
@@ -680,6 +686,16 @@
         </div>
       </div>
 
+      <!-- Botón para agregar tirador tarde en Ronda 1 -->
+      <div id="wrapper-btn-sumar-pool" class="hidden">
+        <button onclick="abrirModalSumarTiradorPool()" class="w-full bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-purple-300 border border-blue-500/30 font-bold py-2.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          <span>Sumar Tirador a la Pool (Ronda 1)</span>
+        </button>
+      </div>
+
       <!-- Lista de Tiradores en Pool -->
       <div id="pool-activa-lista" class="space-y-3">
         <!-- Renderizado desde JS (se renderizarán como tarjetas individuales) -->
@@ -687,7 +703,7 @@
 
       <!-- Controles del Tirador Activo (Fijo abajo) -->
       <div class="mt-auto pb-safe">
-        <div class="card-base p-4 md:p-6">
+        <div id="card-tiro-pool" class="card-base p-4 md:p-6">
           <div class="flex justify-between items-center mb-2 px-2">
             <div class="flex items-center gap-2">
               <span class="text-xs md:text-sm font-semibold text-orange-500 dark:text-purple-400 uppercase tracking-wide">Tirador Activo</span>
@@ -727,6 +743,38 @@
       </div>
     </div>
 
+    <!-- Modal: Sumar Tirador a la Pool Activa -->
+    <div id="modal-sumar-tirador-pool" class="hidden modal-overlay z-[110]">
+      <div class="modal-content max-w-md text-center max-h-[90vh] flex flex-col p-6 card-base shadow-2xl rounded-3xl">
+        <h3 class="text-xl font-black text-blue-600 dark:text-purple-400 uppercase tracking-wide mb-2 flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          <span>Sumar a la Pool</span>
+        </h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Seleccioná un tirador disponible o creá uno nuevo para la Ronda 1.</p>
+        
+        <div id="lista-disponibles-sumar-pool" class="space-y-2 overflow-y-auto max-h-48 my-2 text-left pr-1">
+          <!-- Renderizado desde JS -->
+        </div>
+
+        <div class="pt-3 border-t border-gray-200 dark:border-gray-700/60 mt-3 space-y-3">
+          <div class="flex gap-2">
+            <input type="text" id="input-nuevo-tirador-pool" placeholder="Nombre de nuevo tirador..." class="input-base text-sm py-2 px-3 flex-1" />
+            <button onclick="crearYSumarTiradorPool()" class="btn-primary px-4 py-2 text-xs font-bold whitespace-nowrap cursor-pointer">
+              + Crear
+            </button>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="cerrarModalSumarTiradorPool()" class="btn-secondary flex-1 py-2 text-sm font-semibold cursor-pointer">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal de Pool -->
     <div
       id="modal-pool"
@@ -735,8 +783,11 @@
       <div
         class="modal-content max-w-md text-center max-h-[90vh]"
       >
-        <h3 class="text-xl font-black text-purple-400 uppercase tracking-wide mb-4">
-          🏆 Configurar Pool
+        <h3 class="text-xl font-black text-purple-400 uppercase tracking-wide mb-4 flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-6.75A1.125 1.125 0 016 15.375V18.75m9.375-13.5H18a2.25 2.25 0 012.25 2.25c0 1.152-.868 2.1-1.996 2.234A4.5 4.5 0 0115 13.385V5.25zM4.5 7.5A2.25 2.25 0 016.75 5.25H9v8.135A4.5 4.5 0 015.246 9.734 2.25 2.25 0 014.5 7.5z" />
+          </svg>
+          <span>Configurar Pool</span>
         </h3>
         
         <!-- Paso 1: Seleccionar Participantes -->
@@ -986,6 +1037,109 @@
         </div>
       </div>
     </div>
+
+    <!-- Bottom Tab Bar Flotante -->
+    <nav
+      id="bottom-tab-bar"
+      class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-sm sm:max-w-md bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200/80 dark:border-gray-800/80 shadow-2xl rounded-3xl p-1.5 items-center justify-around transition-all duration-300 select-none mb-[env(safe-area-inset-bottom)]"
+    >
+      <!-- Tab Inicio -->
+      <button
+        id="tab-btn-inicio"
+        onclick="navegarTab('inicio')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Inicio</span>
+      </button>
+
+      <!-- Tab Planilla -->
+      <button
+        id="tab-btn-planilla"
+        onclick="navegarTab('planilla')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Planilla</span>
+      </button>
+
+      <!-- Botón Central FAB con Menú Desplegable -->
+      <div id="wrapper-fab-pool" class="hidden relative -top-5 items-center justify-center px-1 flex-shrink-0">
+        <!-- Menú Desplegable de Opciones Rápidas -->
+        <div
+          id="menu-fab-opciones"
+          class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 mb-3 w-60 bg-gray-900/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 shadow-2xl rounded-2xl p-2 flex-col gap-1 z-50 animate-fade-in select-none"
+        >
+          <button
+            onclick="cerrarMenuFab(); abrirModalPool();"
+            class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-gray-800 text-purple-400 dark:text-purple-300 font-bold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-6.75A1.125 1.125 0 016 15.375V18.75m9.375-13.5H18a2.25 2.25 0 012.25 2.25c0 1.152-.868 2.1-1.996 2.234A4.5 4.5 0 0115 13.385V5.25zM4.5 7.5A2.25 2.25 0 016.75 5.25H9v8.135A4.5 4.5 0 015.246 9.734 2.25 2.25 0 014.5 7.5z" />
+            </svg>
+            <span>Iniciar Pool</span>
+          </button>
+          <button
+            onclick="cerrarMenuFab(); verPodioParcial();"
+            class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-gray-800 text-blue-400 dark:text-yellow-400 font-bold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer border-t border-gray-800/80"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <span>Ver Clasificación Parcial</span>
+          </button>
+          <button
+            onclick="cerrarMenuFab(); finalizarSesion();"
+            class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-red-900/30 text-red-400 font-extrabold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer border-t border-gray-800/80"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 dark:text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-1.385a1.125 1.125 0 011.01 0l3.44 1.72a1.125 1.125 0 001.01 0l3.44-1.72a1.125 1.125 0 011.01 0l2.77 1.385M3 15V6m0 0l2.77-1.385a1.125 1.125 0 011.01 0l3.44 1.72a1.125 1.125 0 001.01 0l3.44-1.72a1.125 1.125 0 011.01 0l2.77 1.385M18.75 4.5v10.5" />
+            </svg>
+            <span>Finalizar Sesión</span>
+          </button>
+        </div>
+
+        <button
+          onclick="toggleMenuFab()"
+          id="btn-fab-pool"
+          title="Opciones Rápidas"
+          class="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 hover:scale-105 text-white shadow-xl flex items-center justify-center transition-all duration-300 active:scale-90 border-4 border-gray-900 cursor-pointer"
+        >
+          <svg id="icono-fab-plus" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 stroke-[3] transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tab Historial -->
+      <button
+        id="tab-btn-historial"
+        onclick="navegarTab('historial')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Historial</span>
+      </button>
+
+      <!-- Tab Ajustes -->
+      <button
+        id="tab-btn-ajustes"
+        onclick="navegarTab('ajustes')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Ajustes</span>
+      </button>
+    </nav>
 
     <!-- Modal Base Tiradores -->
     <div
