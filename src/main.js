@@ -129,6 +129,7 @@ function showSnackbar(mensaje) {
         participantesStats: {}
       };
       let historialPools = [];
+      let lastPlanillaSubScreen = "pedana";
 
       let modalCallback = null;
 
@@ -1326,7 +1327,7 @@ window.onload = function () {
         document.getElementById("pantalla-configuracion").classList.add("hidden");
         document.getElementById("pantalla-configuracion").classList.remove("flex");
         
-        if (poolState && poolState.activa) {
+        if (poolState && poolState.activa && lastPlanillaSubScreen === "pool") {
           document.getElementById("pantalla-principal").classList.add("hidden");
           document.getElementById("pantalla-pool-activa").classList.remove("hidden");
           actualizarInterfazPool();
@@ -2957,6 +2958,7 @@ window.onload = function () {
     
 // Expose functions to window for inline event handlers
 window.mostrarPedanaGeneral = function() {
+  lastPlanillaSubScreen = "pedana";
   const pPool = document.getElementById("pantalla-pool-activa");
   if (pPool) pPool.classList.add("hidden");
   
@@ -2971,6 +2973,7 @@ window.mostrarPedanaGeneral = function() {
 
 window.mostrarPoolActiva = function() {
   if (!poolState || !poolState.activa) return;
+  lastPlanillaSubScreen = "pool";
   
   document.getElementById("pantalla-principal").classList.add("hidden");
   const pPool = document.getElementById("pantalla-pool-activa");
