@@ -1141,14 +1141,14 @@ window.onload = function () {
         
         if (poolState && poolState.activa) {
           if (isPoolVisible) {
-            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>`;
-            fabBtn.title = "Cambiar a Pedana General";
+            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01" /></svg>`;
+            fabBtn.title = "Ir a Pedana General";
           } else {
-            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H8v2h8v-2h-1c-.55 0-1-.45-1-1v-2.34"/><path d="M18 4H6v7a6 6 0 0 0 12 0V4z"/></svg>`;
-            fabBtn.title = "Cambiar a Pool Activa";
+            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-6.75A1.125 1.125 0 016 15.375V18.75m9.375-13.5H18a2.25 2.25 0 012.25 2.25c0 1.152-.868 2.1-1.996 2.234A4.5 4.5 0 0115 13.385V5.25zM4.5 7.5A2.25 2.25 0 016.75 5.25H9v8.135A4.5 4.5 0 015.246 9.734 2.25 2.25 0 014.5 7.5z" /></svg>`;
+            fabBtn.title = "Ir a Pool Activa";
           }
         } else {
-          fabBtn.innerHTML = `<svg id="icono-fab-plus" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m-8-8h16"></path></svg>`;
+          fabBtn.innerHTML = `<svg id="icono-fab-plus" class="w-6 h-6 text-white transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m-8-8h16"></path></svg>`;
           fabBtn.title = "Opciones";
         }
       }
@@ -1961,6 +1961,7 @@ window.onload = function () {
       }
 
       function actualizarInterfaz() {
+        actualizarFabIconoPool();
         let totalHelicesGlobal = 0;
         tiradores.forEach((t) => {
           if (!t.esGrupo) {
