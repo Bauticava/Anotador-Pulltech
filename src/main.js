@@ -714,32 +714,35 @@ function showSnackbar(mensaje) {
         
         const sig = document.getElementById("pool-activa-siguiente");
         if (sig) {
-           if (poolState.esDesempate) {
-             let sigIdx = poolState.indiceDesempateActual + 1;
-             if (sigIdx >= poolState.participantesDesempate.length) sigIdx = 0;
-             if (poolState.participantesDesempate.length > 1) {
-               const tSig = tiradores.find(x => x.id === poolState.participantesDesempate[sigIdx]);
-               sig.textContent = tSig ? tSig.nombre : "---";
-             } else {
-               sig.textContent = "---";
-             }
-           } else if (poolState.tipo === 'americana') {
-             let loopCount = 0;
-             let sigIdx = poolState.indiceActual + 1;
-             if (sigIdx >= poolState.participantes.length) sigIdx = 0;
-             while (poolState.participantesStats[poolState.participantes[sigIdx]].eliminada && loopCount < poolState.participantes.length) {
-               sigIdx++;
-               if (sigIdx >= poolState.participantes.length) sigIdx = 0;
-               loopCount++;
-             }
-           }
-           
-           if (poolState.participantes.length > 1) {
-             const tSig = tiradores.find(x => x.id === poolState.participantes[sigIdx]);
-             sig.textContent = tSig ? tSig.nombre : "---";
-           } else {
-             sig.textContent = "---";
-           }
+          if (poolState.esDesempate) {
+            let sigIdx = poolState.indiceDesempateActual + 1;
+            if (sigIdx >= poolState.participantesDesempate.length) sigIdx = 0;
+            if (poolState.participantesDesempate.length > 1) {
+              const tSig = tiradores.find(x => x.id === poolState.participantesDesempate[sigIdx]);
+              sig.textContent = tSig ? tSig.nombre : "---";
+            } else {
+              sig.textContent = "---";
+            }
+          } else {
+            let sigIdx = poolState.indiceActual + 1;
+            if (sigIdx >= poolState.participantes.length) sigIdx = 0;
+            
+            if (poolState.tipo === 'americana') {
+              let loopCount = 0;
+              while (poolState.participantesStats[poolState.participantes[sigIdx]].eliminada && loopCount < poolState.participantes.length) {
+                sigIdx++;
+                if (sigIdx >= poolState.participantes.length) sigIdx = 0;
+                loopCount++;
+              }
+            }
+            
+            if (poolState.participantes.length > 1) {
+              const tSig = tiradores.find(x => x.id === poolState.participantes[sigIdx]);
+              sig.textContent = tSig ? tSig.nombre : "---";
+            } else {
+              sig.textContent = "---";
+            }
+          }
         }
       };
 
@@ -1144,7 +1147,7 @@ window.onload = function () {
             fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01" /></svg>`;
             fabBtn.title = "Ir a Pedana General";
           } else {
-            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-6.75A1.125 1.125 0 016 15.375V18.75m9.375-13.5H18a2.25 2.25 0 012.25 2.25c0 1.152-.868 2.1-1.996 2.234A4.5 4.5 0 0115 13.385V5.25zM4.5 7.5A2.25 2.25 0 016.75 5.25H9v8.135A4.5 4.5 0 015.246 9.734 2.25 2.25 0 014.5 7.5z" /></svg>`;
+            fabBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8m-4-4v4M7 4h10M17 4v7a5 5 0 01-10 0V4M5 9a3 3 0 01-3-3V4h5m12 5a3 3 0 003-3V4h-5" /></svg>`;
             fabBtn.title = "Ir a Pool Activa";
           }
         } else {
@@ -1228,11 +1231,18 @@ window.onload = function () {
           }
         }
 
+        const poolActivaEl = document.getElementById("pantalla-pool-activa");
+        const isPoolVisible = poolActivaEl && !poolActivaEl.classList.contains("hidden");
+
         const tabs = ["inicio", "planilla", "historial", "ajustes"];
         tabs.forEach((tab) => {
           const btn = document.getElementById(`tab-btn-${tab}`);
           if (btn) {
-            if (tab === activeTab) {
+            let isTabActive = (tab === activeTab);
+            if (tab === "planilla" && isPoolVisible) {
+              isTabActive = false;
+            }
+            if (isTabActive) {
               btn.classList.add("tab-item-active");
               btn.classList.remove("text-gray-500", "dark:text-gray-400");
             } else {
@@ -1249,7 +1259,13 @@ window.onload = function () {
         } else if (tabName === "planilla") {
           const tieneSerie = (tiradores && tiradores.length > 0) || (poolState && poolState.activa);
           if (tieneSerie) {
-            continuarSerieActual();
+            const poolActivaEl = document.getElementById("pantalla-pool-activa");
+            const isPoolVisible = poolActivaEl && !poolActivaEl.classList.contains("hidden");
+            if (isPoolVisible) {
+              mostrarPedanaGeneral();
+            } else {
+              continuarSerieActual();
+            }
           } else {
             mostrarConfirmacion(
               "No hay una serie activa en curso. ¿Deseas iniciar una nueva serie?",
@@ -2777,7 +2793,9 @@ window.onload = function () {
           item.innerHTML = `
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xl">📅</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
                 <b class="text-base text-white">${nombreSesion}</b>
                 <span class="text-xs text-gray-500">${hora}</span>
               </div>
@@ -2787,15 +2805,24 @@ window.onload = function () {
                 <span class="bg-gray-800 px-2 py-1 rounded text-yellow-300 border border-gray-700">${s.tiradores.filter((x) => !x.esGrupo).length} Tiradores</span>
               </div>
             </div>
-            <div class="flex items-center gap-2 w-full md:w-auto">
+            <div class="flex items-center gap-2 w-full md:w-auto mt-3 md:mt-0">
               <button onclick="renombrarSesion(${s.id})" class="flex-1 md:flex-none bg-gray-800 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 transition flex items-center justify-center gap-2">
-                <span>✏️</span> <span class="md:hidden">Renombrar</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                <span class="md:hidden">Renombrar</span>
               </button>
               <button onclick="eliminarSesionHistorial(${s.id})" class="flex-1 md:flex-none bg-red-900/30 hover:bg-red-800 text-red-300 px-3 py-2 rounded-lg text-sm border border-red-800/50 transition flex items-center justify-center gap-2">
-                <span>🗑️</span> <span class="md:hidden">Eliminar</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span class="md:hidden">Eliminar</span>
               </button>
               <button onclick="cargarSesionPasada(${s.id})" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center justify-center gap-2">
-                <span>🚀</span> Entrar
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+                Entrar
               </button>
             </div>
           `;
