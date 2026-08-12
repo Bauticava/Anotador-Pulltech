@@ -3134,10 +3134,167 @@ function hideAuthScreen() {
   document.getElementById('pantalla-auth').classList.add('hidden');
 }
 
+function sanitizarMensajeError(error) {
+  if (!error) return 'Ocurrió un error inesperado.';
+  const msg = error.message || error.toString();
+  
+  if (msg.includes('Invalid login credentials')) {
+    return 'Correo electrónico o contraseña incorrectos.';
+  }
+  if (msg.includes('User already registered') || msg.includes('already exists')) {
+    return 'Este correo electrónico ya se encuentra registrado.';
+  }
+  if (msg.includes('Password should be at least')) {
+    return 'La contraseña debe tener al menos 8 caracteres.';
+  }
+  if (msg.includes('Email rate limit exceeded')) {
+    return 'Demasiados intentos de envío. Por favor, esperá unos minutos.';
+  }
+  if (msg.includes('Email not confirmed')) {
+    return 'Por favor, confirmá tu correo electrónico antes de ingresar.';
+  }
+  if (msg.includes('Network error') || msg.includes('Failed to fetch')) {
+    return 'Error de conexión a internet. Verificá tu red.';
+  }
+  return msg;
+}
+
+window.togglePasswordVisibility = function() {
+  const input = document.getElementById('auth-password');
+  const icon = document.getElementById('eye-icon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) {
+      icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.858A9.954 9.954 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m-4.592-4.591a3 3 0 10-4.243-4.243m4.243 4.243L3 3l18 18" />`;
+    }
+  } else {
+    input.type = 'password';
+    if (icon) {
+      icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+    }
+  }
+};
+
+window.evaluarFortalezaPassword = function(pwd) {
+  const container = document.getElementById('password-strength-container');
+  const bar = document.getElementById('password-strength-bar');
+  const text = document.getElementById('password-strength-text');
+  if (!container || !bar || !text || !isRegistering) return;
+
+  if (!pwd) {
+    bar.style.width = '0%';
+    text.textContent = 'Mínimo 8 caracteres';
+    text.className = 'text-[11px] font-semibold text-gray-400 text-right';
+    return;
+  }
+
+  let score = 0;
+  if (pwd.length >= 8) score += 1;
+  if (pwd.length >= 12) score += 1;
+  if (/[A-Z]/.test(pwd)) score += 1;
+  if (/[0-9]/.test(pwd)) score += 1;
+  if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
+
+  if (score <= 1) {
+    bar.style.width = '25%';
+    bar.className = 'h-full transition-all duration-300 bg-red-500';
+    text.textContent = 'Débil (usá al menos 8 caracteres)';
+    text.className = 'text-[11px] font-semibold text-red-500 text-right';
+  } else if (score <= 3) {
+    bar.style.width = '60%';
+    bar.className = 'h-full transition-all duration-300 bg-yellow-500';
+    text.textContent = 'Aceptable (agregá letras o números)';
+    text.className = 'text-[11px] font-semibold text-yellow-500 text-right';
+  } else {
+    bar.style.width = '100%';
+    bar.className = 'h-full transition-all duration-300 bg-emerald-500';
+    text.textContent = '¡Excelente y segura!';
+    text.className = 'text-[11px] font-semibold text-emerald-500 text-right';
+  }
+};
+
+window.loginConGoogle = async function() {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) throw error;
+  } catch (error) {
+    mostrarAlerta(sanitizarMensajeError(error));
+  }
+};
+
+window.setAuthTab = function(mode) {
+  isRegistering = (mode === 'register');
+
+  const btn = document.getElementById('btn-login');
+  const toggleBtn = document.getElementById('btn-toggle-auth');
+  const titulo = document.getElementById('auth-titulo');
+  const subtitulo = document.getElementById('auth-subtitulo');
+  const togglePregunta = document.getElementById('auth-toggle-pregunta');
+  const strengthContainer = document.getElementById('password-strength-container');
+  const confirmContainer = document.getElementById('auth-confirm-password-container');
+
+  const tabLogin = document.getElementById('tab-auth-login');
+  const tabRegister = document.getElementById('tab-auth-register');
+
+  if (isRegistering) {
+    if (tabLogin) {
+      tabLogin.className = 'flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white';
+    }
+    if (tabRegister) {
+      tabRegister.className = 'flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer bg-blue-600 text-white shadow-xs';
+    }
+
+    if (btn) btn.textContent = 'Crear Cuenta';
+    if (toggleBtn) toggleBtn.textContent = 'Iniciar Sesión';
+    if (titulo) titulo.textContent = 'Crear Cuenta';
+    if (subtitulo) subtitulo.textContent = 'Registrate para guardar y sincronizar tu historial de tiro en la nube.';
+    if (togglePregunta) togglePregunta.textContent = '¿Ya tenés una cuenta?';
+    if (strengthContainer) strengthContainer.classList.remove('hidden');
+    if (confirmContainer) confirmContainer.classList.remove('hidden');
+
+    const pwdInput = document.getElementById('auth-password');
+    if (pwdInput) evaluarFortalezaPassword(pwdInput.value);
+  } else {
+    if (tabLogin) {
+      tabLogin.className = 'flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs';
+    }
+    if (tabRegister) {
+      tabRegister.className = 'flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white';
+    }
+
+    if (btn) btn.textContent = 'Ingresar';
+    if (toggleBtn) toggleBtn.textContent = 'Registrate';
+    if (titulo) titulo.textContent = 'Iniciar Sesión';
+    if (subtitulo) subtitulo.textContent = 'Ingresá a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.';
+    if (togglePregunta) togglePregunta.textContent = '¿No tenés cuenta?';
+    if (strengthContainer) strengthContainer.classList.add('hidden');
+    if (confirmContainer) confirmContainer.classList.add('hidden');
+  }
+};
+
 async function handleAuth(e) {
   e.preventDefault();
-  const email = document.getElementById('auth-email').value;
+  const rawEmail = document.getElementById('auth-email').value;
+  const email = (rawEmail || '').trim().toLowerCase();
   const password = document.getElementById('auth-password').value;
+
+  if (isRegistering) {
+    const confirmPassword = document.getElementById('auth-confirm-password').value;
+    if (password.length < 8) {
+      mostrarAlerta('La contraseña debe tener al menos 8 caracteres por razones de seguridad.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      mostrarAlerta('Las contraseñas no coinciden. Por favor, verificá que ambas sean iguales.');
+      return;
+    }
+  }
   
   const btn = document.getElementById('btn-login');
   btn.disabled = true;
@@ -3151,8 +3308,7 @@ async function handleAuth(e) {
       // Check if user already exists (Supabase returns empty identities array when email exists and security protection is enabled)
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         mostrarAlerta('Este correo electrónico ya está registrado. Por favor, iniciá sesión.');
-        isRegistering = true;
-        toggleAuthMode(); // Switch back to login mode
+        setAuthTab('login');
         return;
       }
 
@@ -3165,8 +3321,7 @@ async function handleAuth(e) {
         mostrarAlerta('¡Registro exitoso! Ya podés ingresar.');
       }
       
-      isRegistering = true;
-      toggleAuthMode(); // Switch UI back to login mode
+      setAuthTab('login');
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -3174,7 +3329,7 @@ async function handleAuth(e) {
       btn.textContent = 'Ingresar';
     }
   } catch (error) {
-    mostrarAlerta(error.message || 'Error al procesar la solicitud.');
+    mostrarAlerta(sanitizarMensajeError(error));
     btn.textContent = isRegistering ? 'Crear Cuenta' : 'Ingresar';
   } finally {
     btn.disabled = false;
@@ -3182,26 +3337,7 @@ async function handleAuth(e) {
 }
 
 window.toggleAuthMode = function() {
-  isRegistering = !isRegistering;
-  const btn = document.getElementById('btn-login');
-  const toggleBtn = document.getElementById('btn-toggle-auth');
-  const titulo = document.getElementById('auth-titulo');
-  const subtitulo = document.getElementById('auth-subtitulo');
-  const togglePregunta = document.getElementById('auth-toggle-pregunta');
-  
-  if (isRegistering) {
-    if (btn) btn.textContent = 'Crear Cuenta';
-    if (toggleBtn) toggleBtn.textContent = 'Ingresar';
-    if (titulo) titulo.textContent = 'Crear Cuenta';
-    if (subtitulo) subtitulo.textContent = 'Registrate para guardar y sincronizar tu historial de tiro en la nube.';
-    if (togglePregunta) togglePregunta.textContent = '¿Ya tenés una cuenta?';
-  } else {
-    if (btn) btn.textContent = 'Ingresar';
-    if (toggleBtn) toggleBtn.textContent = 'Registrate';
-    if (titulo) titulo.textContent = 'Iniciar Sesión';
-    if (subtitulo) subtitulo.textContent = 'Ingresá a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.';
-    if (togglePregunta) togglePregunta.textContent = '¿No tenés cuenta?';
-  }
+  setAuthTab(isRegistering ? 'login' : 'register');
 }
 
 window.cerrarSesion = async function() {
