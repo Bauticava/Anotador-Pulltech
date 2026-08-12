@@ -1461,14 +1461,18 @@ window.onload = function () {
         if (typeof actualizarInterfazPool === "function") actualizarInterfazPool();
       }
       function cambiarPrecio() {
-        precioHelice =
-          parseFloat(document.getElementById("precio-helice").value) || 0;
-        guardarEnLocalStorage();
-      }
-      function cambiarMinimumPodio() {
-        minimoPodio = parseInt(document.getElementById("min-podio").value) || 0;
+        const el = document.getElementById("precio-helice");
+        precioHelice = parseFloat(el ? el.value : 0) || 0;
         guardarEnLocalStorage();
         if (estadoApp === "resultados") mostrarPantallaResultados();
+        actualizarInterfaz();
+      }
+      function cambiarMinimumPodio() {
+        const el = document.getElementById("min-podio");
+        minimoPodio = parseInt(el ? el.value : 0) || 0;
+        guardarEnLocalStorage();
+        if (estadoApp === "resultados") mostrarPantallaResultados();
+        actualizarInterfaz();
       }
       function cambiarCriterioOrden(nc) {
         criterioOrden = nc;
@@ -1481,6 +1485,14 @@ window.onload = function () {
       }
       function cerrarModalPodio() {
         document.getElementById("modal-podio").classList.add("hidden");
+      }
+      function abrirModalAjustesSesion() {
+        const modal = document.getElementById("modal-ajustes-sesion");
+        if (modal) modal.classList.remove("hidden");
+      }
+      function cerrarModalAjustesSesion() {
+        const modal = document.getElementById("modal-ajustes-sesion");
+        if (modal) modal.classList.add("hidden");
       }
 
       function aplicarTema(tema, conTransicion) {
@@ -3021,6 +3033,8 @@ window.cambiarPrecio = cambiarPrecio;
 window.cambiarMinimumPodio = cambiarMinimumPodio;
 window.cambiarCriterioOrden = cambiarCriterioOrden;
 window.cerrarModalPodio = cerrarModalPodio;
+window.abrirModalAjustesSesion = abrirModalAjustesSesion;
+window.cerrarModalAjustesSesion = cerrarModalAjustesSesion;
 window.toggleMultiModeLogica = toggleMultiModeLogica;
 window.compartirWhatsApp = compartirWhatsApp;
 window.compartirWhatsAppIndividual = compartirWhatsAppIndividual;
@@ -3133,28 +3147,38 @@ async function handleAuth(e) {
     if (isRegistering) {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      
+
+      // Check if user already exists (Supabase returns empty identities array when email exists and security protection is enabled)
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        mostrarAlerta('Este correo electrónico ya está registrado. Por favor, iniciá sesión.');
+        isRegistering = true;
+        toggleAuthMode(); // Switch back to login mode
+        return;
+      }
+
       // If email confirmation is required, session will be null
       if (data.user && data.user.identities && data.user.identities.length > 0 && !data.session) {
-        mostrarAlerta('¡Registro exitoso! Por favor, revisa tu correo electrónico para confirmar tu cuenta antes de ingresar.');
+        mostrarAlerta('¡Registro exitoso! Por favor, revisá tu correo electrónico para confirmar tu cuenta antes de ingresar.');
+      } else if (data.session) {
+        mostrarAlerta('¡Registro e inicio de sesión exitosos!');
       } else {
-        mostrarAlerta('¡Registro exitoso! Ya puedes ingresar.');
+        mostrarAlerta('¡Registro exitoso! Ya podés ingresar.');
       }
       
-      isRegistering = false;
-      document.getElementById('btn-toggle-auth').textContent = 'Registrate';
-      btn.textContent = 'Ingresar';
+      isRegistering = true;
+      toggleAuthMode(); // Switch UI back to login mode
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      // onAuthStateChange will handle UI
+      // onAuthStateChange will handle UI transition
       btn.textContent = 'Ingresar';
     }
   } catch (error) {
-    mostrarAlerta(error.message);
+    mostrarAlerta(error.message || 'Error al procesar la solicitud.');
     btn.textContent = isRegistering ? 'Crear Cuenta' : 'Ingresar';
+  } finally {
+    btn.disabled = false;
   }
-  btn.disabled = false;
 }
 
 window.toggleAuthMode = function() {
