@@ -1,969 +1,1033 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Contador de Hélices</title>
-    <meta name="theme-color" content="#1d4ed8" />
-    <meta name="description" content="Contador de Hélices - Aplicación para pedanas de tiro">
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/icon.svg" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  </head>
-  <body
-    class="theme-dark min-h-screen flex flex-col font-sans antialiased transition-colors duration-200"
-  >
-    <header
-      id="main-header"
-      class="main-header hidden"
-    >
-      <div class="w-6 h-6"></div>
-      <div class="flex flex-col items-center">
-        <h1
-          onclick="irAPantallaPrincipal()"
-          class="text-xl md:text-2xl font-black tracking-wider text-white uppercase cursor-pointer hover:text-blue-200 transition-colors leading-tight"
-        >
-          Contador de Hélices
-        </h1>
-      </div>
-      <button
-        onclick="toggleTheme()"
-        id="btn-tema"
-        class="text-white hover:text-yellow-300 transition text-xl md:text-2xl"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="icono-luna"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-      </button>
-    </header>
 
-    <!-- Pantalla de Login / Registro -->
-    <div id="pantalla-auth" class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-6 z-30 animate-fade-in my-auto min-h-[80vh]">
-      <!-- Brand Logo / Propeller Icon -->
-      <div class="text-center space-y-3">
-        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-600/10 dark:bg-blue-500/10 border border-blue-500/20 shadow-2xl p-3 relative overflow-hidden mb-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-16 h-16 animate-[spin_4s_linear_infinite] drop-shadow-md">
-            <defs>
-              <mask id="authHoleMask">
-                <rect width="100" height="100" fill="white"/>
-                <circle cx="50" cy="50" r="5" fill="black"/>
-              </mask>
-            </defs>
-            <g mask="url(#authHoleMask)">
-              <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
-              <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
-              <circle cx="50" cy="50" r="28" fill="#F8F9FA" stroke="black" stroke-width="1" />
-              <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
-            </g>
-          </svg>
-        </div>
-        <h2 id="auth-titulo" class="text-3xl font-black uppercase tracking-wider text-blue-900 dark:text-yellow-400">
-          Iniciar Sesión
-        </h2>
-        <p id="auth-subtitulo" class="text-gray-600 dark:text-gray-300 text-xs md:text-sm max-w-xs mx-auto leading-relaxed">
-          Ingresá a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.
-        </p>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contador de Hélices</title>
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="description" content="Contador de Hélices - Aplicación para pedanas de tiro">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="apple-touch-icon" href="/icon.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
 
-      <!-- Auth Form Card -->
-      <div class="w-full max-w-sm space-y-5 card-base shadow-2xl p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-gray-700/80">
-        <!-- Auth Tabs Selector -->
-        <div class="flex p-1 bg-gray-100 dark:bg-gray-800/80 rounded-2xl border border-gray-200 dark:border-gray-700/60 mb-2">
-          <button type="button" id="tab-auth-login" onclick="setAuthTab('login')" class="flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs">
-            Iniciar Sesión
-          </button>
-          <button type="button" id="tab-auth-register" onclick="setAuthTab('register')" class="flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-            Crear Cuenta
-          </button>
-        </div>
-
-        <form id="form-auth" class="space-y-4">
-          <!-- Email Input -->
-          <div>
-            <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Email</label>
-            <div class="relative flex items-center">
-              <span class="absolute left-3.5 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
-              </span>
-              <input type="email" id="auth-email" required placeholder="tu@email.com" class="input-base pl-11 py-3 text-sm">
-            </div>
-          </div>
-
-          <!-- Password Input -->
-          <div>
-            <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Contraseña</label>
-            <div class="relative flex items-center">
-              <span class="absolute left-3.5 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-              </span>
-              <input type="password" id="auth-password" required minlength="8" placeholder="••••••••" oninput="evaluarFortalezaPassword(this.value)" class="input-base pl-11 pr-11 py-3 text-sm">
-              <button type="button" id="btn-toggle-password" onclick="togglePasswordVisibility()" class="absolute right-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer" title="Mostrar/Ocultar contraseña">
-                <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
-            </div>
-            <!-- Indicador de Fortaleza -->
-            <div id="password-strength-container" class="hidden mt-2 space-y-1">
-              <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div id="password-strength-bar" class="h-full w-0 transition-all duration-300 bg-red-500"></div>
-              </div>
-              <p id="password-strength-text" class="text-[11px] font-semibold text-gray-400 text-right">Mínimo 8 caracteres</p>
-            </div>
-          </div>
-
-          <!-- Confirm Password Input (Only for Registration) -->
-          <div id="auth-confirm-password-container" class="hidden">
-            <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Confirmar Contraseña</label>
-            <div class="relative flex items-center">
-              <span class="absolute left-3.5 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </span>
-              <input type="password" id="auth-confirm-password" minlength="8" placeholder="••••••••" class="input-base pl-11 py-3 text-sm">
-            </div>
-          </div>
-          
-          <div class="pt-2">
-            <button type="submit" id="btn-login" class="btn-primary w-full py-3.5 text-base font-bold shadow-lg hover:shadow-xl transition-all cursor-pointer">
-              Ingresar
-            </button>
-          </div>
-
-          <!-- Separador u OAuth -->
-          <div class="relative flex py-2 items-center">
-            <div class="flex-grow border-t border-gray-200 dark:border-gray-700/60"></div>
-            <span class="flex-shrink mx-3 text-xs text-gray-400 font-semibold uppercase">o</span>
-            <div class="flex-grow border-t border-gray-200 dark:border-gray-700/60"></div>
-          </div>
-
-          <!-- Botón de Google OAuth -->
-          <button type="button" onclick="loginConGoogle()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-xl py-3 px-4 text-sm font-bold shadow-xs hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all cursor-pointer">
-            <svg class="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-            Continuar con Google
-          </button>
-
-          <div class="text-center pt-2 border-t border-gray-200 dark:border-gray-700/60 mt-4">
-            <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-              <span id="auth-toggle-pregunta">¿No tenés cuenta?</span> 
-              <button type="button" id="btn-toggle-auth" class="text-blue-600 dark:text-yellow-400 font-bold hover:underline cursor-pointer ml-1">Registrate</button>
-            </p>
-          </div>
-        </form>
-      </div>
+<body class="theme-dark min-h-screen flex flex-col font-sans antialiased transition-colors duration-200">
+  <header id="main-header" class="main-header hidden">
+    <div class="w-6 h-6"></div>
+    <div class="flex flex-col items-center">
+      <h1 onclick="irAPantallaPrincipal()"
+        class="text-xl md:text-2xl font-black tracking-wider text-white uppercase cursor-pointer hover:text-blue-200 transition-colors leading-tight">
+        Contador de Hélices
+      </h1>
     </div>
+    <button onclick="toggleTheme()" id="btn-tema"
+      class="text-white hover:text-yellow-300 transition text-xl md:text-2xl">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        id="icono-luna">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+    </button>
+  </header>
 
-    <!-- Pantalla de Inicio -->
-    <div id="pantalla-inicio" class="hidden flex flex-col flex-1 items-center justify-center p-6 pb-28 space-y-12 animate-fade-in z-30">
-      <div class="text-center space-y-4">
-        <div class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gray-50 dark:bg-gray-800 mb-6 shadow-xl border-4 border-white dark:border-gray-700 relative overflow-hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-24 h-24 animate-[spin_3s_linear_infinite] drop-shadow-md">
-            <defs>
-              <mask id="holeMask">
-                <rect width="100" height="100" fill="white"/>
-                <circle cx="50" cy="50" r="5" fill="black"/>
-              </mask>
-            </defs>
-            <g mask="url(#holeMask)">
-              <!-- Alas Naranjas (Forma acampanada de la hélice) -->
-              <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
-              <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1" stroke-linejoin="round" />
-              <!-- Cuerpo Blanco Central -->
-              <circle cx="50" cy="50" r="28" fill="#F8F9FA" stroke="black" stroke-width="1" />
-              <!-- Anillo Rojo Central -->
-              <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
-            </g>
-          </svg>
-        </div>
-        <h1 class="text-3xl md:text-5xl font-black tracking-widest uppercase text-gray-900 dark:text-white">
-          Contador
-          <span class="block text-blue-600 dark:text-blue-400 mt-2">de Hélices</span>
-        </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm md:text-base max-w-sm mx-auto mt-4">
-          Sistema profesional para el registro y clasificación en pedanas de tiro.
-        </p>
-      </div>
-
-      <div class="flex flex-col w-full max-w-xs space-y-4">
-        <button 
-          id="btn-continuar-serie"
-          onclick="continuarSerieActual()" 
-          class="hidden btn-success w-full py-4 text-lg"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg> Continuar Serie Actual
-        </button>
-
-        <button 
-          onclick="iniciarNuevaSerie()" 
-          class="btn-primary w-full py-4 text-lg hover:-translate-y-1 hover:shadow-2xl"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="9" />
-            <circle cx="12" cy="12" r="5" />
-            <circle cx="12" cy="12" r="1" />
-          </svg>
-          <span>Nueva Serie</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Pantalla de Historial Dedicada -->
-    <div id="pantalla-historial" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-28 mt-4 space-y-6">
-      <div class="flex items-center justify-center border-b border-gray-700/50 pb-4">
-        <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide text-center">
-          Historial de Sesiones
-        </h2>
-      </div>
-      
-      <div id="lista-historial-vacio" class="text-center py-10 bg-gray-800/30 rounded-2xl border border-gray-700 border-dashed">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-50 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
-        <p class="text-gray-400">No hay sesiones guardadas todavía.</p>
-        <p class="text-xs text-gray-500 mt-2">Cuando termines una serie se guardará automáticamente.</p>
-      </div>
-
-      <div id="contenedor-items-historial" class="space-y-3">
-        <!-- Las tarjetas de historial se inyectarán aquí -->
-      </div>
-    </div>
-
-    <!-- Pantalla de Configuración Dedicada -->
-    <div id="pantalla-configuracion" class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-28 mt-4 space-y-6">
-      <div class="flex items-center justify-center border-b border-gray-200 dark:border-gray-700/50 pb-4">
-        <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide text-center">
-          Configuración
-        </h2>
-      </div>
-
-      <!-- Ajustes de Torneo / Sesión -->
-      <div class="card-base flex items-center justify-between p-4">
-        <div>
-          <h3 class="text-sm font-bold text-yellow-600 dark:text-yellow-400">Ajustes de la Sesión</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">El Precio por Hélice y Mínimo para Podio se configuran directamente en la <strong>Planilla</strong>.</p>
-        </div>
-        <button onclick="navegarTab('planilla'); abrirModalAjustesSesion();" class="btn-primary text-xs py-2 px-3 whitespace-nowrap cursor-pointer ml-3">
-          Ir a Planilla
-        </button>
-      </div>
-
-      <!-- Ajustes de Experiencia -->
-      <div class="card-base space-y-4">
-        <h3 class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">Experiencia de Uso</h3>
-        
-        <div class="flex justify-between items-center py-2">
-          <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Vibración al anotar</span>
-          <label class="relative inline-flex items-center cursor-pointer select-none">
-            <input type="checkbox" id="switch-vibracion" onchange="toggleVibracion()" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-        
-        <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700/50">
-          <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Sonido al anotar</span>
-          <label class="relative inline-flex items-center cursor-pointer select-none">
-            <input type="checkbox" id="switch-sonido" onchange="toggleSonido()" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-
-        <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700/50">
-          <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Mantener pantalla encendida</span>
-          <label class="relative inline-flex items-center cursor-pointer select-none">
-            <input type="checkbox" id="switch-wakelock" onchange="toggleWakeLock()" class="sr-only peer" checked>
-            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-
-        <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700/50">
-          <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Modo Pantalla Completa</span>
-          <label class="relative inline-flex items-center cursor-pointer select-none">
-            <input type="checkbox" id="switch-fullscreen" onchange="toggleFullScreen()" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-      </div>
-
-      <!-- Respaldo y Seguridad -->
-      <div class="card-base space-y-4">
-        <h3 class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">Respaldo de Datos</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Exporta tus tiradores e historial para que nunca pierdas tu información.</p>
-        
-        <button onclick="exportarDatos()" class="btn-success w-full py-3.5">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> Exportar Copia de Seguridad
-        </button>
-        
-        <button onclick="document.getElementById('importar-archivo').click()" class="btn-outline w-full py-3.5">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Restaurar Copia de Seguridad
-        </button>
-        <input type="file" id="importar-archivo" accept=".json" class="hidden" onchange="importarDatos(event)">
-      </div>
-
-      <!-- Cuenta de Usuario -->
-      <div class="card-base space-y-4">
-        <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">Cuenta de Usuario</h3>
-        <button onclick="cerrarSesion()" class="btn-danger w-full py-3.5">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg> Cerrar Sesión
-        </button>
-      </div>
-    </div>
-
-    <main
-      id="pantalla-principal"
-      class="hidden flex flex-col flex-1 p-4 md:p-6 max-w-md md:max-w-xl mx-auto w-full space-y-6 md:space-y-8 pb-28"
-    >
-      <div class="relative flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 pb-2 md:pb-4">
-        <div class="w-9"></div>
-        <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide text-center">
-          Planilla
-        </h2>
-        <button
-          onclick="abrirModalAjustesSesion()"
-          class="p-2 text-gray-500 hover:text-yellow-500 dark:text-gray-400 dark:hover:text-yellow-400 transition-colors cursor-pointer rounded-full hover:bg-gray-100 dark:hover:bg-gray-800/60"
-          title="Ajustes de la Sesión"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
-      </div>
-
-      <div id="panel-registro" class="flex flex-col flex-1 space-y-6 md:space-y-8">
-
-        <section
-          id="card-lista"
-          class="card-dark p-4 md:p-5 rounded-xl shadow border"
-        >
-          <div class="flex justify-between items-center mb-3 gap-2">
-            <h2
-              id="titulo-lista-tiradores"
-              class="text-xs md:text-sm font-semibold text-gray-400 uppercase tracking-wide flex-1 leading-tight"
-            >
-              Tiradores Añadidos
-            </h2>
-            <div class="flex items-center gap-3">
-              <label class="flex items-center gap-2 cursor-pointer select-none" title="Activar Modo Equipo (Registrar simultáneamente)">
-                <span class="text-xs font-bold text-gray-400">EQUIPO</span>
-                <div class="relative inline-flex items-center">
-                  <input type="checkbox" id="switch-multimode" onchange="toggleMultiModeLogica()" class="sr-only peer" />
-                  <div class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                </div>
-              </label>
-              <button
-                onclick="abrirModalBaseTiradores()"
-                class="bg-blue-600 hover:bg-blue-500 text-white font-bold h-8 w-8 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
-                title="Añadir Tirador"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div
-            id="lista-tiradores"
-            class="space-y-2 max-h-56 md:max-h-72 overflow-y-auto pr-1 relative min-h-[80px]"
-          >
-            <div id="lista-vacia-estado" class="absolute inset-0 flex flex-col items-center justify-center text-center p-2 opacity-60">
-              <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Pedana vacía</p>
-            </div>
-          </div>
-        </section>
-        <section
-          id="card-tiro"
-          class="card-dark p-4 md:p-5 rounded-xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border border-gray-700/50 text-center space-y-4 md:space-y-6 sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] mt-auto z-40 backdrop-blur-xl bg-opacity-95"
-        >
-          <div class="flex justify-between items-center px-2">
-            <div class="flex items-center gap-2">
-              <h2
-                class="text-xs md:text-sm font-semibold text-gray-400 uppercase tracking-wide"
-              >
-                Pedana Activa
-              </h2>
-              <div
-                id="indicador-total-helices"
-                class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-700/50 px-2 py-0.5 rounded-full border border-gray-600/50"
-              >
-                Total: 0
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <div
-                id="indicador-racha-negativa"
-                class="hidden bg-blue-600/20 text-blue-300 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-blue-600/40"
-              >
-                Racha: 0
-              </div>
-              <div
-                id="indicador-racha"
-                class="hidden bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40"
-              >
-                Racha: 0
-              </div>
-              <button onclick="deshacerUltimoTiro()" id="btn-deshacer-main" class="w-8 h-8 md:w-10 md:h-10 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90" disabled>
-                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-              </button>
-            </div>
-          </div>
-          <div
-            id="tirador-seleccionado-nombre"
-            class="text-xl md:text-2xl font-bold text-blue-400 h-7 md:h-8 transition-all truncate px-4"
-          >
-            Seleccioná un tirador
-          </div>
-          <div id="grupo-racha-display" class="hidden flex justify-center gap-2 mt-1 mb-2"></div>
-
-          <div
-            id="multimode-sequence-display"
-            class="hidden text-xs font-mono tracking-widest bg-black/20 p-2 rounded border border-gray-700/50 min-h-[30px] flex items-center justify-center"
-          ></div>
-          <div class="grid grid-cols-2 gap-4 md:gap-6">
-            <button
-              onclick="registrarTiro(true)"
-              id="btn-pego"
-              disabled
-              class="btn-action-pego py-3 md:py-4 text-lg md:text-xl"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>PEGÓ</span>
-            </button>
-            <button
-              onclick="registrarTiro(false)"
-              id="btn-erro"
-              disabled
-              class="btn-action-erro py-3 md:py-4 text-lg md:text-xl"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>ERRÓ</span>
-            </button>
-          </div>
-          <!-- Botón deshacer movido al Snackbar -->
-        </section>
-      </div>
-
+  <!-- Pantalla de Login / Registro -->
+  <div id="pantalla-auth"
+    class="hidden flex flex-col flex-1 items-center justify-center p-6 space-y-6 z-30 animate-fade-in my-auto min-h-[80vh]">
+    <!-- Brand Logo / Propeller Icon -->
+    <div class="text-center space-y-3">
       <div
-        id="panel-resultados"
-        class="hidden space-y-6 md:space-y-8 container-dinamico"
-      >
-        <div class="flex items-center gap-4">
-          <button onclick="volverALaPedana()" class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 h-9 w-9 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-          </button>
-          <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide">
-            Resultados
-          </h2>
-        </div>
-        <section
-          id="card-podio"
-          class="card-dark p-4 rounded-xl shadow border text-center"
-        >
-          <div class="space-y-0.5 mb-4">
-            <h3
-              class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider"
-            >
-              Podio de Efectividad
-            </h3>
-            <p
-              id="podio-requisito-texto"
-              class="text-[10px] md:text-xs text-yellow-500/80 italic"
-            >
-              *Mínimo obligatorio: 10 hélices
-            </p>
-          </div>
-          <div
-            id="contenedor-podio"
-            class="flex justify-center items-end space-x-2 h-44 pt-4 pb-2"
-          ></div>
-        </section>
-        <section
-          id="card-tabla"
-          class="card-dark p-4 rounded-xl shadow border space-y-4"
-        >
-          <div class="flex flex-col gap-2 border-b border-orange-200 dark:border-gray-700/50 pb-2">
-            <div class="flex justify-between items-center w-full">
-              <div class="flex items-center gap-2">
-                <h2
-                  class="text-base md:text-lg font-bold text-yellow-400 uppercase tracking-wider"
-                >
-                  Clasificación General
-                </h2>
-                <button
-                  onclick="toggleMostrarDinero()"
-                  id="btn-toggle-dinero"
-                  class="p-1 hover:scale-110 transition-transform select-none text-gray-400 hover:text-white"
-                  title="Mostrar/Ocultar montos"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-              </div>
-              <div
-                class="flex bg-orange-100 dark:bg-gray-900/80 p-0.5 rounded-lg border border-orange-200 dark:border-gray-700 text-[10px] font-bold"
-              >
-                <button
-                  onclick="cambiarCriterioOrden('porcentaje')"
-                  id="btn-orden-porcentaje"
-                  class="px-2 py-1 rounded-md bg-blue-600 text-white"
-                >
-                  % Eficacia
-                </button>
-                <button
-                  onclick="cambiarCriterioOrden('helices')"
-                  id="btn-orden-helices"
-                  class="px-2 py-1 rounded-md text-gray-400"
-                >
-                  H. Pegadas
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse md:text-base">
-              <thead>
-                <tr
-                  class="border-b border-orange-200 dark:border-gray-700 text-gray-400 text-xs md:text-sm uppercase"
-                >
-                  <th class="py-2">Tirador/Grupo</th>
-                  <th class="py-2 text-center">Total</th>
-                  <th class="py-2 text-center text-green-400">P</th>
-                  <th class="py-2 text-right th-dinero-col">A abonar</th>
-                  <th
-                    class="py-2 text-right font-bold"
-                    id="col-dinamica-header"
-                  >
-                    % Efic.
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                id="tabla-resultados"
-                class="divide-y divide-orange-200 dark:divide-gray-700/50 text-sm md:text-base"
-              ></tbody>
-            </table>
-          </div>
-          <div
-            id="card-resumen-financiero"
-            class="bg-orange-50 dark:bg-gray-900/50 p-3 rounded-lg border border-orange-200 dark:border-gray-700 flex justify-between items-center font-mono text-sm md:text-base"
-          >
-            <div
-              class="text-xs md:text-sm font-sans font-bold text-gray-400 uppercase"
-            >
-              Caja Total Pedana:
-            </div>
-            <div class="text-right">
-              <div
-                id="resumen-total-helices"
-                class="text-xs md:text-sm text-gray-300"
-              >
-                0 hélices
-              </div>
-              <div
-                id="resumen-total-dinero"
-                class="text-base md:text-lg font-bold text-green-600 dark:text-green-400"
-              >
-                $0
-              </div>
-            </div>
-          </div>
-        </section>
-        <section
-          id="card-grafico"
-          class="card-dark p-4 rounded-xl shadow border"
-        >
-          <h3
-            class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider text-center mb-1"
-          >
-            Gráfico de Rendimiento
-          </h3>
-          <div class="flex items-center justify-center gap-4 mb-3 text-[10px] md:text-xs font-semibold text-gray-500 dark:text-gray-400">
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Pegados</div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Errados</div>
-          </div>
-          <div class="relative w-full h-64 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div
-              id="wrapper-canvas-grafico"
-              class="absolute left-0 top-0 h-full"
-              style="min-width: 100%"
-            >
-              <canvas id="graficoResultados"></canvas>
-            </div>
-          </div>
-        </section>
-        <div class="space-y-2 pt-2">
-          <button
-            onclick="compartirWhatsApp()"
-            class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base cursor-pointer"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 013 21c.287-.852.793-1.637 1.464-2.274C3.064 17.202 2.25 14.73 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-            </svg>
-            <span>Compartir Resumen por WhatsApp</span>
-          </button>
-          <button
-            onclick="imprimirConSistemaNativo()"
-            class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base cursor-pointer"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-            <span>Guardar Reporte PDF General</span>
-          </button>
-
-          <button
-            onclick="guardarYFinalizarSesion()"
-            class="w-full bg-yellow-600 text-gray-950 font-extrabold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base mt-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg> Guardar y Finalizar Sesión
-          </button>
-        </div>
+        class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-600/10 dark:bg-blue-500/10 border border-blue-500/20 shadow-2xl p-3 relative overflow-hidden mb-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+          class="w-16 h-16 animate-[spin_4s_linear_infinite] drop-shadow-md">
+          <defs>
+            <mask id="authHoleMask">
+              <rect width="100" height="100" fill="white" />
+              <circle cx="50" cy="50" r="5" fill="black" />
+            </mask>
+          </defs>
+          <g mask="url(#authHoleMask)">
+            <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1"
+              stroke-linejoin="round" />
+            <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1"
+              stroke-linejoin="round" />
+            <circle cx="50" cy="50" r="28" fill="#F8F9FA" stroke="black" stroke-width="1" />
+            <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
+          </g>
+        </svg>
       </div>
-    </main>
+      <h2 id="auth-titulo" class="text-3xl font-black uppercase tracking-wider text-blue-900 dark:text-yellow-400">
+        Iniciar Sesión
+      </h2>
+      <p id="auth-subtitulo"
+        class="text-gray-600 dark:text-gray-300 text-xs md:text-sm max-w-xs mx-auto leading-relaxed">
+        Ingresá a tu cuenta para guardar y sincronizar tu historial de tiro en la nube.
+      </p>
+    </div>
 
+    <!-- Auth Form Card -->
     <div
-      id="modal-generico"
-      class="hidden modal-overlay z-[200]"
-    >
+      class="w-full max-w-sm space-y-5 card-base shadow-2xl p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-gray-700/80">
+      <!-- Auth Tabs Selector -->
       <div
-        class="modal-content max-w-sm text-center"
-      >
-        <h3 id="modal-titulo" class="text-lg font-bold text-white mb-2">
-          Atención
+        class="flex p-1 bg-gray-100 dark:bg-gray-800/80 rounded-2xl border border-gray-200 dark:border-gray-700/60 mb-2">
+        <button type="button" id="tab-auth-login" onclick="setAuthTab('login')"
+          class="flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs">
+          Iniciar Sesión
+        </button>
+        <button type="button" id="tab-auth-register" onclick="setAuthTab('register')"
+          class="flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+          Crear Cuenta
+        </button>
+      </div>
+
+      <form id="form-auth" class="space-y-4">
+        <!-- Email Input -->
+        <div>
+          <label
+            class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Email</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3.5 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+            </span>
+            <input type="email" id="auth-email" required placeholder="tu@email.com"
+              class="input-base pl-11 py-3 text-sm">
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div>
+          <label
+            class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Contraseña</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3.5 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </span>
+            <input type="password" id="auth-password" required minlength="8" placeholder="••••••••"
+              oninput="evaluarFortalezaPassword(this.value)" class="input-base pl-11 pr-11 py-3 text-sm">
+            <button type="button" id="btn-toggle-password" onclick="togglePasswordVisibility()"
+              class="absolute right-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+              title="Mostrar/Ocultar contraseña">
+              <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+          <!-- Indicador de Fortaleza -->
+          <div id="password-strength-container" class="hidden mt-2 space-y-1">
+            <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div id="password-strength-bar" class="h-full w-0 transition-all duration-300 bg-red-500"></div>
+            </div>
+            <p id="password-strength-text" class="text-[11px] font-semibold text-gray-400 text-right">Mínimo 8
+              caracteres</p>
+          </div>
+        </div>
+
+        <!-- Confirm Password Input (Only for Registration) -->
+        <div id="auth-confirm-password-container" class="hidden">
+          <label
+            class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1.5">Confirmar
+            Contraseña</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3.5 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </span>
+            <input type="password" id="auth-confirm-password" minlength="8" placeholder="••••••••"
+              class="input-base pl-11 py-3 text-sm">
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" id="btn-login"
+            class="btn-primary w-full py-3.5 text-base font-bold shadow-lg hover:shadow-xl transition-all cursor-pointer">
+            Ingresar
+          </button>
+        </div>
+
+        <!-- Separador u OAuth -->
+        <div class="relative flex py-2 items-center">
+          <div class="flex-grow border-t border-gray-200 dark:border-gray-700/60"></div>
+          <span class="flex-shrink mx-3 text-xs text-gray-400 font-semibold uppercase">o</span>
+          <div class="flex-grow border-t border-gray-200 dark:border-gray-700/60"></div>
+        </div>
+
+        <!-- Botón de Google OAuth -->
+        <button type="button" id="btn-google-auth" onclick="loginConGoogle()"
+          class="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-xl py-3 px-4 text-sm font-bold shadow-xs hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all cursor-pointer">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05"
+              d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z" />
+            <path fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+          </svg>
+          Continuar con Google
+        </button>
+
+        <div class="text-center pt-2 border-t border-gray-200 dark:border-gray-700/60 mt-4">
+          <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+            <span id="auth-toggle-pregunta">¿No tenés cuenta?</span>
+            <button type="button" id="btn-toggle-auth"
+              class="text-blue-600 dark:text-yellow-400 font-bold hover:underline cursor-pointer ml-1">Registrate</button>
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Pantalla de Inicio -->
+  <div id="pantalla-inicio"
+    class="hidden flex flex-col flex-1 items-center justify-center p-6 pb-28 space-y-12 animate-fade-in z-30">
+    <div class="text-center space-y-4">
+      <div
+        class="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gray-50 dark:bg-gray-800 mb-6 shadow-xl border-4 border-white dark:border-gray-700 relative overflow-hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+          class="w-24 h-24 animate-[spin_3s_linear_infinite] drop-shadow-md">
+          <defs>
+            <mask id="holeMask">
+              <rect width="100" height="100" fill="white" />
+              <circle cx="50" cy="50" r="5" fill="black" />
+            </mask>
+          </defs>
+          <g mask="url(#holeMask)">
+            <!-- Alas Naranjas (Forma acampanada de la hélice) -->
+            <path d="M 42 50 L 20 10 Q 50 0 80 10 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1"
+              stroke-linejoin="round" />
+            <path d="M 42 50 L 20 90 Q 50 100 80 90 L 58 50 Z" fill="#FF5722" stroke="black" stroke-width="1"
+              stroke-linejoin="round" />
+            <!-- Cuerpo Blanco Central -->
+            <circle cx="50" cy="50" r="28" fill="#F8F9FA" stroke="black" stroke-width="1" />
+            <!-- Anillo Rojo Central -->
+            <circle cx="50" cy="50" r="14" fill="none" stroke="#E53935" stroke-width="8" />
+          </g>
+        </svg>
+      </div>
+      <h1 class="text-3xl md:text-5xl font-black tracking-widest uppercase text-gray-900 dark:text-white">
+        Contador
+        <span class="block text-blue-600 dark:text-blue-400 mt-2">de Hélices</span>
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 text-sm md:text-base max-w-sm mx-auto mt-4">
+        Sistema profesional para el registro y clasificación en pedanas de tiro.
+      </p>
+    </div>
+
+    <div class="flex flex-col w-full max-w-xs space-y-4">
+      <button id="btn-continuar-serie" onclick="continuarSerieActual()" class="hidden btn-success w-full py-4 text-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+            clip-rule="evenodd" />
+        </svg> Continuar Serie Actual
+      </button>
+
+      <button onclick="iniciarNuevaSerie()"
+        class="btn-primary w-full py-4 text-lg hover:-translate-y-1 hover:shadow-2xl">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="5" />
+          <circle cx="12" cy="12" r="1" />
+        </svg>
+        <span>Nueva Serie</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pantalla de Historial Dedicada -->
+  <div id="pantalla-historial"
+    class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-28 mt-4 space-y-6">
+    <div class="flex items-center justify-center border-b border-gray-700/50 pb-4">
+      <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide text-center">
+        Historial de Sesiones
+      </h2>
+    </div>
+
+    <div id="lista-historial-vacio"
+      class="text-center py-10 bg-gray-800/30 rounded-2xl border border-gray-700 border-dashed">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-50 text-gray-400" fill="none"
+        viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <p class="text-gray-400">No hay sesiones guardadas todavía.</p>
+      <p class="text-xs text-gray-500 mt-2">Cuando termines una serie se guardará automáticamente.</p>
+    </div>
+
+    <div id="contenedor-items-historial" class="space-y-3">
+      <!-- Las tarjetas de historial se inyectarán aquí -->
+    </div>
+  </div>
+
+  <!-- Pantalla de Configuración Dedicada -->
+  <div id="pantalla-configuracion"
+    class="hidden flex-col flex-1 p-4 max-w-xl mx-auto w-full z-30 animate-fade-in pb-28 mt-4 space-y-6">
+    <div class="flex items-center justify-center border-b border-gray-200 dark:border-gray-700/50 pb-4">
+      <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide text-center">
+        Configuración
+      </h2>
+    </div>
+
+    <!-- Ajustes de Torneo / Sesión -->
+    <div class="card-base flex items-center justify-between p-4">
+      <div>
+        <h3 class="text-sm font-bold text-yellow-600 dark:text-yellow-400">Ajustes de la Sesión</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">El Precio por Hélice y Mínimo para Podio se
+          configuran directamente en la <strong>Planilla</strong>.</p>
+      </div>
+      <button onclick="navegarTab('planilla'); abrirModalAjustesSesion();"
+        class="btn-primary text-xs py-2 px-3 whitespace-nowrap cursor-pointer ml-3">
+        Ir a Planilla
+      </button>
+    </div>
+
+    <!-- Ajustes de Experiencia -->
+    <div class="card-base space-y-4">
+      <h3
+        class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">
+        Experiencia de Uso</h3>
+
+      <div class="flex justify-between items-center py-2">
+        <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Vibración al anotar</span>
+        <label class="relative inline-flex items-center cursor-pointer select-none">
+          <input type="checkbox" id="switch-vibracion" onchange="toggleVibracion()" class="sr-only peer" checked>
+          <div
+            class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+          </div>
+        </label>
+      </div>
+
+      <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700/50">
+        <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Sonido al anotar</span>
+        <label class="relative inline-flex items-center cursor-pointer select-none">
+          <input type="checkbox" id="switch-sonido" onchange="toggleSonido()" class="sr-only peer" checked>
+          <div
+            class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+          </div>
+        </label>
+      </div>
+
+      <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700/50">
+        <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Mantener pantalla encendida</span>
+        <label class="relative inline-flex items-center cursor-pointer select-none">
+          <input type="checkbox" id="switch-wakelock" onchange="toggleWakeLock()" class="sr-only peer" checked>
+          <div
+            class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+          </div>
+        </label>
+      </div>
+
+      <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-gray-700/50">
+        <span class="text-base font-semibold text-gray-800 dark:text-gray-200">Modo Pantalla Completa</span>
+        <label class="relative inline-flex items-center cursor-pointer select-none">
+          <input type="checkbox" id="switch-fullscreen" onchange="toggleFullScreen()" class="sr-only peer">
+          <div
+            class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Respaldo y Seguridad -->
+    <div class="card-base space-y-4">
+      <h3
+        class="text-lg font-bold text-emerald-600 dark:text-emerald-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">
+        Respaldo de Datos</h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Exporta tus tiradores e historial para que nunca pierdas
+        tu información.</p>
+
+      <button onclick="exportarDatos()" class="btn-success w-full py-3.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg> Exportar Copia de Seguridad
+      </button>
+
+      <button onclick="document.getElementById('importar-archivo').click()" class="btn-outline w-full py-3.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg> Restaurar Copia de Seguridad
+      </button>
+      <input type="file" id="importar-archivo" accept=".json" class="hidden" onchange="importarDatos(event)">
+    </div>
+
+    <!-- Cuenta de Usuario -->
+    <div class="card-base space-y-4">
+      <h3
+        class="text-lg font-bold text-red-600 dark:text-red-400 mb-2 border-b border-gray-200 dark:border-gray-700/50 pb-2">
+        Cuenta de Usuario</h3>
+      <button onclick="cerrarSesion()" class="btn-danger w-full py-3.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg> Cerrar Sesión
+      </button>
+    </div>
+  </div>
+
+  <main id="pantalla-principal"
+    class="hidden flex flex-col flex-1 p-4 md:p-6 max-w-md md:max-w-xl mx-auto w-full space-y-6 md:space-y-8 pb-28">
+    <div
+      class="relative flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 pb-2 md:pb-4">
+      <div class="w-9"></div>
+      <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide text-center">
+        Planilla
+      </h2>
+      <button onclick="abrirModalAjustesSesion()"
+        class="p-2 text-gray-500 hover:text-yellow-500 dark:text-gray-400 dark:hover:text-yellow-400 transition-colors cursor-pointer rounded-full hover:bg-gray-100 dark:hover:bg-gray-800/60"
+        title="Ajustes de la Sesión">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+    </div>
+
+    <div id="panel-registro" class="flex flex-col flex-1 space-y-6 md:space-y-8">
+
+      <section id="card-lista" class="card-dark p-4 md:p-5 rounded-xl shadow border">
+        <div class="flex justify-between items-center mb-3 gap-2">
+          <h2 id="titulo-lista-tiradores"
+            class="text-xs md:text-sm font-semibold text-gray-400 uppercase tracking-wide flex-1 leading-tight">
+            Tiradores Añadidos
+          </h2>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer select-none"
+              title="Activar Modo Equipo (Registrar simultáneamente)">
+              <span class="text-xs font-bold text-gray-400">EQUIPO</span>
+              <div class="relative inline-flex items-center">
+                <input type="checkbox" id="switch-multimode" onchange="toggleMultiModeLogica()" class="sr-only peer" />
+                <div
+                  class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600">
+                </div>
+              </div>
+            </label>
+            <button onclick="abrirModalBaseTiradores()"
+              class="bg-blue-600 hover:bg-blue-500 text-white font-bold h-8 w-8 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
+              title="Añadir Tirador">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="lista-tiradores" class="space-y-2 max-h-56 md:max-h-72 overflow-y-auto pr-1 relative min-h-[80px]">
+          <div id="lista-vacia-estado"
+            class="absolute inset-0 flex flex-col items-center justify-center text-center p-2 opacity-60">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Pedana vacía</p>
+          </div>
+        </div>
+      </section>
+      <section id="card-tiro"
+        class="card-dark p-4 md:p-5 rounded-xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border border-gray-700/50 text-center space-y-4 md:space-y-6 sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] mt-auto z-40 backdrop-blur-xl bg-opacity-95">
+        <div class="flex justify-between items-center px-2">
+          <div class="flex items-center gap-2">
+            <h2 class="text-xs md:text-sm font-semibold text-gray-400 uppercase tracking-wide">
+              Pedana Activa
+            </h2>
+            <div id="indicador-total-helices"
+              class="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-700/50 px-2 py-0.5 rounded-full border border-gray-600/50">
+              Total: 0
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div id="indicador-racha-negativa"
+              class="hidden bg-blue-600/20 text-blue-300 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-blue-600/40">
+              Racha: 0
+            </div>
+            <div id="indicador-racha"
+              class="hidden bg-yellow-600/20 text-yellow-400 text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full border border-yellow-600/40">
+              Racha: 0
+            </div>
+            <button onclick="deshacerUltimoTiro()" id="btn-deshacer-main"
+              class="w-8 h-8 md:w-10 md:h-10 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90"
+              disabled>
+              <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="tirador-seleccionado-nombre"
+          class="text-xl md:text-2xl font-bold text-blue-400 h-7 md:h-8 transition-all truncate px-4">
+          Seleccioná un tirador
+        </div>
+        <div id="grupo-racha-display" class="hidden flex justify-center gap-2 mt-1 mb-2"></div>
+
+        <div id="multimode-sequence-display"
+          class="hidden text-xs font-mono tracking-widest bg-black/20 p-2 rounded border border-gray-700/50 min-h-[30px] flex items-center justify-center">
+        </div>
+        <div class="grid grid-cols-2 gap-4 md:gap-6">
+          <button onclick="registrarTiro(true)" id="btn-pego" disabled
+            class="btn-action-pego py-3 md:py-4 text-lg md:text-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>PEGÓ</span>
+          </button>
+          <button onclick="registrarTiro(false)" id="btn-erro" disabled
+            class="btn-action-erro py-3 md:py-4 text-lg md:text-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>ERRÓ</span>
+          </button>
+        </div>
+        <!-- Botón deshacer movido al Snackbar -->
+      </section>
+    </div>
+
+    <div id="panel-resultados" class="hidden space-y-6 md:space-y-8 container-dinamico">
+      <div class="flex items-center gap-4">
+        <button onclick="volverALaPedana()"
+          class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 h-9 w-9 rounded-full shadow flex items-center justify-center transition-all active:scale-95 flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
+        <h2 class="text-2xl md:text-3xl font-black uppercase text-gray-900 dark:text-white tracking-wide">
+          Resultados
+        </h2>
+      </div>
+      <section id="card-podio" class="card-dark p-4 rounded-xl shadow border text-center">
+        <div class="space-y-0.5 mb-4">
+          <h3 class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">
+            Podio de Efectividad
+          </h3>
+          <p id="podio-requisito-texto" class="text-[10px] md:text-xs text-yellow-500/80 italic">
+            *Mínimo obligatorio: 10 hélices
+          </p>
+        </div>
+        <div id="contenedor-podio" class="flex justify-center items-end space-x-2 h-44 pt-4 pb-2"></div>
+      </section>
+      <section id="card-tabla" class="card-dark p-4 rounded-xl shadow border space-y-4">
+        <div class="flex flex-col gap-2 border-b border-orange-200 dark:border-gray-700/50 pb-2">
+          <div class="flex justify-between items-center w-full">
+            <div class="flex items-center gap-2">
+              <h2 class="text-base md:text-lg font-bold text-yellow-400 uppercase tracking-wider">
+                Clasificación General
+              </h2>
+              <button onclick="toggleMostrarDinero()" id="btn-toggle-dinero"
+                class="p-1 hover:scale-110 transition-transform select-none text-gray-400 hover:text-white"
+                title="Mostrar/Ocultar montos">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
+            <div
+              class="flex bg-orange-100 dark:bg-gray-900/80 p-0.5 rounded-lg border border-orange-200 dark:border-gray-700 text-[10px] font-bold">
+              <button onclick="cambiarCriterioOrden('porcentaje')" id="btn-orden-porcentaje"
+                class="px-2 py-1 rounded-md bg-blue-600 text-white">
+                % Eficacia
+              </button>
+              <button onclick="cambiarCriterioOrden('helices')" id="btn-orden-helices"
+                class="px-2 py-1 rounded-md text-gray-400">
+                H. Pegadas
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse md:text-base">
+            <thead>
+              <tr class="border-b border-orange-200 dark:border-gray-700 text-gray-400 text-xs md:text-sm uppercase">
+                <th class="py-2">Tirador/Grupo</th>
+                <th class="py-2 text-center">Total</th>
+                <th class="py-2 text-center text-green-400">P</th>
+                <th class="py-2 text-right th-dinero-col">A abonar</th>
+                <th class="py-2 text-right font-bold" id="col-dinamica-header">
+                  % Efic.
+                </th>
+              </tr>
+            </thead>
+            <tbody id="tabla-resultados"
+              class="divide-y divide-orange-200 dark:divide-gray-700/50 text-sm md:text-base"></tbody>
+          </table>
+        </div>
+        <div id="card-resumen-financiero"
+          class="bg-orange-50 dark:bg-gray-900/50 p-3 rounded-lg border border-orange-200 dark:border-gray-700 flex justify-between items-center font-mono text-sm md:text-base">
+          <div class="text-xs md:text-sm font-sans font-bold text-gray-400 uppercase">
+            Caja Total Pedana:
+          </div>
+          <div class="text-right">
+            <div id="resumen-total-helices" class="text-xs md:text-sm text-gray-300">
+              0 hélices
+            </div>
+            <div id="resumen-total-dinero" class="text-base md:text-lg font-bold text-green-600 dark:text-green-400">
+              $0
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="card-grafico" class="card-dark p-4 rounded-xl shadow border">
+        <h3 class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider text-center mb-1">
+          Gráfico de Rendimiento
         </h3>
-        <p id="modal-mensaje" class="text-sm text-gray-300 mb-6"></p>
-        <input
-          type="text"
-          id="modal-input"
-          class="hidden w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm mb-6 font-medium"
-        />
-        <div class="flex gap-3 justify-center">
-          <button
-            id="btn-modal-cancelar"
-            class="btn-secondary flex-1 py-2.5 text-sm hidden"
-          >
+        <div
+          class="flex items-center justify-center gap-4 mb-3 text-[10px] md:text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Pegados</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Errados</div>
+        </div>
+        <div
+          class="relative w-full h-64 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div id="wrapper-canvas-grafico" class="absolute left-0 top-0 h-full" style="min-width: 100%">
+            <canvas id="graficoResultados"></canvas>
+          </div>
+        </div>
+      </section>
+      <div class="space-y-2 pt-2">
+        <button onclick="compartirWhatsApp()"
+          class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 013 21c.287-.852.793-1.637 1.464-2.274C3.064 17.202 2.25 14.73 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+          </svg>
+          <span>Compartir Resumen por WhatsApp</span>
+        </button>
+        <button onclick="imprimirConSistemaNativo()"
+          class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span>Guardar Reporte PDF General</span>
+        </button>
+
+        <button onclick="guardarYFinalizarSesion()"
+          class="w-full bg-yellow-600 text-gray-950 font-extrabold py-3 rounded-lg text-center shadow flex items-center justify-center gap-2 active:scale-95 md:text-base mt-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg> Guardar y Finalizar Sesión
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <div id="modal-generico" class="hidden modal-overlay z-[200]">
+    <div class="modal-content max-w-sm text-center">
+      <h3 id="modal-titulo" class="text-lg font-bold text-white mb-2">
+        Atención
+      </h3>
+      <p id="modal-mensaje" class="text-sm text-gray-300 mb-6"></p>
+      <input type="text" id="modal-input"
+        class="hidden w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm mb-6 font-medium" />
+      <div class="flex gap-3 justify-center">
+        <button id="btn-modal-cancelar" class="btn-secondary flex-1 py-2.5 text-sm hidden">
+          Cancelar
+        </button>
+        <button id="btn-modal-confirmar" class="btn-primary flex-1 py-2.5 text-sm">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-podio"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
+    <div class="card-base p-5 rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md text-center space-y-4"
+      id="modal-container-style">
+      <div class="flex justify-between items-start border-b border-orange-200 dark:border-gray-700/50 pb-2">
+        <div class="text-left">
+          <h3 class="text-base md:text-lg font-extrabold text-yellow-400 uppercase tracking-wider">
+            Clasificación Parcial
+          </h3>
+          <p id="modal-requisito-texto" class="text-[10px] md:text-xs text-gray-400 italic">
+            *Mínimo para podio: 10 hélices
+          </p>
+        </div>
+        <div
+          class="flex bg-orange-100 dark:bg-gray-900/80 p-0.5 rounded-lg border border-orange-200 dark:border-gray-700 text-[9px] font-bold">
+          <button onclick="cambiarCriterioOrden('porcentaje')" id="btn-modal-porcentaje"
+            class="px-1.5 py-0.5 rounded bg-blue-600 text-white">
+            %
+          </button>
+          <button onclick="cambiarCriterioOrden('helices')" id="btn-modal-helices"
+            class="px-1.5 py-0.5 rounded text-gray-400">
+            H
+          </button>
+        </div>
+      </div>
+      <div id="contenedor-podio-parcial"
+        class="flex justify-center items-end space-x-2 h-44 pt-4 border-b border-orange-200 dark:border-gray-700/50 pb-4">
+      </div>
+      <div class="text-left space-y-1.5 max-h-40 overflow-y-auto pr-1" id="lista-parcial-completa"></div>
+      <button onclick="cerrarModalPodio()"
+        class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm active:scale-95">
+        Volver a la Pedana
+      </button>
+    </div>
+  </div>
+
+  <!-- Pantalla Superpuesta: Pool Activa -->
+  <div id="pantalla-pool-activa"
+    class="hidden flex flex-col flex-1 w-full max-w-xl mx-auto p-4 md:p-6 space-y-6 relative z-30 animate-fade-in pb-28">
+
+    <!-- Card Superior: Header de la Pool & Siguiente Tirador -->
+    <div class="card-base p-4 md:p-6 flex flex-col gap-4">
+      <!-- Header -->
+      <div class="flex justify-between items-center gap-2">
+        <div>
+          <h2 id="pool-activa-titulo"
+            class="text-xl md:text-2xl font-black text-orange-500 dark:text-purple-400 uppercase tracking-wider leading-none">
+            Pool en Curso</h2>
+          <p id="pool-activa-ronda" class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-semibold mt-1">Ronda
+            1</p>
+        </div>
+        <button onclick="terminarPoolManual()"
+          class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer">
+          Terminar Pool
+        </button>
+      </div>
+      <!-- Siguiente Tirador -->
+      <div
+        class="bg-orange-50 dark:bg-purple-900/30 p-3 rounded-xl border border-orange-200 dark:border-purple-500/30 text-center flex items-center justify-center gap-2">
+        <span
+          class="text-xs md:text-sm text-orange-600 dark:text-purple-300 font-semibold tracking-widest uppercase">Próximo
+          Turno:</span>
+        <span id="pool-activa-siguiente" class="text-sm md:text-base font-bold text-gray-900 dark:text-white">---</span>
+      </div>
+    </div>
+
+    <!-- Botón para agregar tirador tarde en Ronda 1 -->
+    <div id="wrapper-btn-sumar-pool" class="hidden">
+      <button onclick="abrirModalSumarTiradorPool()"
+        class="w-full bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-purple-300 border border-blue-500/30 font-bold py-2.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+        <span>Sumar Tirador a la Pool (Ronda 1)</span>
+      </button>
+    </div>
+
+    <!-- Lista de Tiradores en Pool -->
+    <div id="pool-activa-lista" class="space-y-3">
+      <!-- Renderizado desde JS (se renderizarán como tarjetas individuales) -->
+    </div>
+
+    <!-- Controles del Tirador Activo (Fijo abajo) -->
+    <div class="mt-auto pb-safe sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-40">
+      <div id="card-tiro-pool"
+        class="card-base p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl bg-opacity-95">
+        <div class="flex justify-between items-center mb-2 px-1 gap-1">
+          <div class="flex items-center gap-1.5">
+            <span
+              class="text-xs md:text-sm font-semibold text-orange-500 dark:text-purple-400 uppercase tracking-wide">Tirador
+              Activo</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="saltarTurnoPool()" id="btn-pool-saltar" title="Saltar Turno"
+              class="px-2.5 py-1.5 bg-gray-700/80 hover:bg-gray-600/80 text-yellow-400 border border-gray-600/60 rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+              <span class="hidden xs:inline">Saltar Turno</span>
+            </button>
+            <button onclick="confirmarAbandonoPoolActual()" id="btn-pool-abandonar" title="Abandonar Pool"
+              class="px-2.5 py-1.5 bg-red-900/40 hover:bg-red-900/60 text-red-300 border border-red-700/50 rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <span class="hidden xs:inline">Abandonar</span>
+            </button>
+            <button onclick="deshacerTiroPool()" id="btn-pool-deshacer" title="Deshacer Tiro"
+              class="w-8 h-8 bg-orange-100 hover:bg-orange-200 text-orange-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90"
+              disabled>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="pool-activa-tirador-nombre"
+          class="text-xl md:text-2xl font-bold text-orange-600 dark:text-blue-400 h-7 md:h-8 transition-all truncate px-4 mb-3 text-center">
+          Seleccionando...
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 md:gap-6">
+          <button onclick="registrarTiroPool(true)" id="btn-pool-pego"
+            class="btn-action-pego py-3 md:py-4 text-lg md:text-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>PEGÓ</span>
+          </button>
+          <button onclick="registrarTiroPool(false)" id="btn-pool-erro"
+            class="btn-action-erro py-3 md:py-4 text-lg md:text-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>ERRÓ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Sumar Tirador a la Pool Activa -->
+  <div id="modal-sumar-tirador-pool" class="hidden modal-overlay z-[110]">
+    <div class="modal-content max-w-md text-center max-h-[90vh] flex flex-col p-6 card-base shadow-2xl rounded-3xl">
+      <h3
+        class="text-xl font-black text-blue-600 dark:text-purple-400 uppercase tracking-wide mb-2 flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+        <span>Sumar a la Pool</span>
+      </h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Seleccioná un tirador disponible o creá uno nuevo para la
+        Ronda 1.</p>
+
+      <div id="lista-disponibles-sumar-pool" class="space-y-2 overflow-y-auto max-h-48 my-2 text-left pr-1">
+        <!-- Renderizado desde JS -->
+      </div>
+
+      <div class="pt-3 border-t border-gray-200 dark:border-gray-700/60 mt-3 space-y-3">
+        <div class="flex gap-2">
+          <input type="text" id="input-nuevo-tirador-pool" placeholder="Nombre de nuevo tirador..."
+            class="input-base text-sm py-2 px-3 flex-1" />
+          <button onclick="crearYSumarTiradorPool()"
+            class="btn-primary px-4 py-2 text-xs font-bold whitespace-nowrap cursor-pointer">
+            + Crear
+          </button>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button onclick="cerrarModalSumarTiradorPool()"
+            class="btn-secondary flex-1 py-2 text-sm font-semibold cursor-pointer">
             Cancelar
           </button>
-          <button
-            id="btn-modal-confirmar"
-            class="btn-primary flex-1 py-2.5 text-sm"
-          >
-            Aceptar
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Pool -->
+  <div id="modal-pool" class="hidden modal-overlay z-[110]">
+    <div class="modal-content max-w-md text-center max-h-[90vh]">
+      <h3
+        class="text-xl font-black text-purple-400 uppercase tracking-wide mb-4 flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8 21h8m-4-4v4M7 4h10M17 4v7a5 5 0 01-10 0V4M5 9a3 3 0 01-3-3V4h5m12 5a3 3 0 003-3V4h-5" />
+        </svg>
+        <span>Configurar Pool</span>
+      </h3>
+
+      <!-- Paso 1: Seleccionar Participantes -->
+      <div id="pool-step-1" class="flex-1 overflow-y-auto flex flex-col">
+        <p class="text-sm text-gray-300 mb-4 font-semibold text-left">Selecciona los participantes:</p>
+        <div id="lista-participantes-pool" class="space-y-2 mb-4 max-h-60 overflow-y-auto pr-1 text-left flex-1">
+          <!-- Checkboxes inyectados por JS -->
+        </div>
+        <div class="pt-2 border-t border-gray-700/50 mt-auto">
+          <button onclick="siguientePasoPool()" id="btn-pool-siguiente" class="btn-primary w-full py-3 text-sm">
+            Siguiente
+          </button>
+          <button onclick="cerrarModalPool()"
+            class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-xl text-sm transition">
+            Cancelar
           </button>
         </div>
       </div>
-    </div>
 
-    <div
-      id="modal-podio"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all"
-    >
-      <div
-        class="card-base p-5 rounded-2xl shadow-2xl w-full max-w-sm md:max-w-md text-center space-y-4"
-        id="modal-container-style"
-      >
-        <div
-          class="flex justify-between items-start border-b border-orange-200 dark:border-gray-700/50 pb-2"
-        >
-          <div class="text-left">
-            <h3
-              class="text-base md:text-lg font-extrabold text-yellow-400 uppercase tracking-wider"
-            >
-              Clasificación Parcial
-            </h3>
-            <p
-              id="modal-requisito-texto"
-              class="text-[10px] md:text-xs text-gray-400 italic"
-            >
-              *Mínimo para podio: 10 hélices
-            </p>
-          </div>
-          <div
-            class="flex bg-orange-100 dark:bg-gray-900/80 p-0.5 rounded-lg border border-orange-200 dark:border-gray-700 text-[9px] font-bold"
-          >
-            <button
-              onclick="cambiarCriterioOrden('porcentaje')"
-              id="btn-modal-porcentaje"
-              class="px-1.5 py-0.5 rounded bg-blue-600 text-white"
-            >
-              %
-            </button>
-            <button
-              onclick="cambiarCriterioOrden('helices')"
-              id="btn-modal-helices"
-              class="px-1.5 py-0.5 rounded text-gray-400"
-            >
-              H
-            </button>
+      <!-- Paso 2: Configurar Modo -->
+      <div id="pool-step-2" class="hidden flex-1 overflow-y-auto flex flex-col text-left space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Modo</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-pool-modo-torneo" onclick="setPoolModo('torneo')"
+              class="bg-blue-600 text-white border border-blue-500 py-2 rounded-lg font-bold text-sm transition-colors">Torneo</button>
+            <button id="btn-pool-modo-americana" onclick="setPoolModo('americana')"
+              class="bg-gray-700 text-gray-300 border border-gray-600 py-2 rounded-lg font-bold text-sm transition-colors">Americana</button>
           </div>
         </div>
-        <div
-          id="contenedor-podio-parcial"
-          class="flex justify-center items-end space-x-2 h-44 pt-4 border-b border-orange-200 dark:border-gray-700/50 pb-4"
-        ></div>
-        <div
-          class="text-left space-y-1.5 max-h-40 overflow-y-auto pr-1"
-          id="lista-parcial-completa"
-        ></div>
-        <button
-          onclick="cerrarModalPodio()"
-          class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm active:scale-95"
-        >
-          Volver a la Pedana
-        </button>
-      </div>
-    </div>
 
-    <!-- Pantalla Superpuesta: Pool Activa -->
-    <div id="pantalla-pool-activa" class="hidden flex flex-col flex-1 w-full max-w-xl mx-auto p-4 md:p-6 space-y-6 relative z-30 animate-fade-in pb-28">
-      
-      <!-- Card Superior: Header de la Pool & Siguiente Tirador -->
-      <div class="card-base p-4 md:p-6 flex flex-col gap-4">
-        <!-- Header -->
-        <div class="flex justify-between items-center gap-2">
+        <div id="pool-config-torneo" class="space-y-4">
           <div>
-            <h2 id="pool-activa-titulo" class="text-xl md:text-2xl font-black text-orange-500 dark:text-purple-400 uppercase tracking-wider leading-none">Pool en Curso</h2>
-            <p id="pool-activa-ronda" class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-semibold mt-1">Ronda 1</p>
-          </div>
-          <button onclick="terminarPoolManual()" class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/50 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl font-bold transition-colors cursor-pointer">
-            Terminar Pool
-          </button>
-        </div>
-        <!-- Siguiente Tirador -->
-        <div class="bg-orange-50 dark:bg-purple-900/30 p-3 rounded-xl border border-orange-200 dark:border-purple-500/30 text-center flex items-center justify-center gap-2">
-          <span class="text-xs md:text-sm text-orange-600 dark:text-purple-300 font-semibold tracking-widest uppercase">Próximo Turno:</span>
-          <span id="pool-activa-siguiente" class="text-sm md:text-base font-bold text-gray-900 dark:text-white">---</span>
-        </div>
-      </div>
-
-      <!-- Botón para agregar tirador tarde en Ronda 1 -->
-      <div id="wrapper-btn-sumar-pool" class="hidden">
-        <button onclick="abrirModalSumarTiradorPool()" class="w-full bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-purple-300 border border-blue-500/30 font-bold py-2.5 rounded-xl text-xs md:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-          <span>Sumar Tirador a la Pool (Ronda 1)</span>
-        </button>
-      </div>
-
-      <!-- Lista de Tiradores en Pool -->
-      <div id="pool-activa-lista" class="space-y-3">
-        <!-- Renderizado desde JS (se renderizarán como tarjetas individuales) -->
-      </div>
-
-      <!-- Controles del Tirador Activo (Fijo abajo) -->
-      <div class="mt-auto pb-safe sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-40">
-        <div id="card-tiro-pool" class="card-base p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl bg-opacity-95">
-          <div class="flex justify-between items-center mb-2 px-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs md:text-sm font-semibold text-orange-500 dark:text-purple-400 uppercase tracking-wide">Tirador Activo</span>
+            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Cantidad de Hélices</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="setPoolHelices(6)" id="btn-pool-helices-6"
+                class="bg-blue-600 text-white border border-blue-500 py-1.5 rounded-lg font-bold text-sm transition-colors">6</button>
+              <button onclick="setPoolHelices(9)" id="btn-pool-helices-9"
+                class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">9</button>
+              <button onclick="setPoolHelices(12)" id="btn-pool-helices-12"
+                class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">12</button>
             </div>
-            <button onclick="deshacerTiroPool()" id="btn-pool-deshacer" class="w-10 h-10 bg-orange-100 hover:bg-orange-200 text-orange-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center shadow transition-transform active:scale-90" disabled>
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-            </button>
-          </div>
-          
-          <div id="pool-activa-tirador-nombre" class="text-xl md:text-2xl font-bold text-orange-600 dark:text-blue-400 h-7 md:h-8 transition-all truncate px-4 mb-3 text-center">
-            Seleccionando...
-          </div>
-          
-          <div class="grid grid-cols-2 gap-4 md:gap-6">
-            <button
-              onclick="registrarTiroPool(true)"
-              id="btn-pool-pego"
-              class="btn-action-pego py-3 md:py-4 text-lg md:text-xl"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>PEGÓ</span>
-            </button>
-            <button
-              onclick="registrarTiroPool(false)"
-              id="btn-pool-erro"
-              class="btn-action-erro py-3 md:py-4 text-lg md:text-xl"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>ERRÓ</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal: Sumar Tirador a la Pool Activa -->
-    <div id="modal-sumar-tirador-pool" class="hidden modal-overlay z-[110]">
-      <div class="modal-content max-w-md text-center max-h-[90vh] flex flex-col p-6 card-base shadow-2xl rounded-3xl">
-        <h3 class="text-xl font-black text-blue-600 dark:text-purple-400 uppercase tracking-wide mb-2 flex items-center justify-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-          <span>Sumar a la Pool</span>
-        </h3>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Seleccioná un tirador disponible o creá uno nuevo para la Ronda 1.</p>
-        
-        <div id="lista-disponibles-sumar-pool" class="space-y-2 overflow-y-auto max-h-48 my-2 text-left pr-1">
-          <!-- Renderizado desde JS -->
-        </div>
-
-        <div class="pt-3 border-t border-gray-200 dark:border-gray-700/60 mt-3 space-y-3">
-          <div class="flex gap-2">
-            <input type="text" id="input-nuevo-tirador-pool" placeholder="Nombre de nuevo tirador..." class="input-base text-sm py-2 px-3 flex-1" />
-            <button onclick="crearYSumarTiradorPool()" class="btn-primary px-4 py-2 text-xs font-bold whitespace-nowrap cursor-pointer">
-              + Crear
-            </button>
           </div>
 
-          <div class="flex gap-3 pt-2">
-            <button onclick="cerrarModalSumarTiradorPool()" class="btn-secondary flex-1 py-2 text-sm font-semibold cursor-pointer">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal de Pool -->
-    <div
-      id="modal-pool"
-      class="hidden modal-overlay z-[110]"
-    >
-      <div
-        class="modal-content max-w-md text-center max-h-[90vh]"
-      >
-        <h3 class="text-xl font-black text-purple-400 uppercase tracking-wide mb-4 flex items-center justify-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8m-4-4v4M7 4h10M17 4v7a5 5 0 01-10 0V4M5 9a3 3 0 01-3-3V4h5m12 5a3 3 0 003-3V4h-5" />
-          </svg>
-          <span>Configurar Pool</span>
-        </h3>
-        
-        <!-- Paso 1: Seleccionar Participantes -->
-        <div id="pool-step-1" class="flex-1 overflow-y-auto flex flex-col">
-          <p class="text-sm text-gray-300 mb-4 font-semibold text-left">Selecciona los participantes:</p>
-          <div id="lista-participantes-pool" class="space-y-2 mb-4 max-h-60 overflow-y-auto pr-1 text-left flex-1">
-            <!-- Checkboxes inyectados por JS -->
-          </div>
-          <div class="pt-2 border-t border-gray-700/50 mt-auto">
-            <button
-              onclick="siguientePasoPool()"
-              id="btn-pool-siguiente"
-              class="btn-primary w-full py-3 text-sm"
-            >
-              Siguiente
-            </button>
-            <button
-              onclick="cerrarModalPool()"
-              class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-xl text-sm transition"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-
-        <!-- Paso 2: Configurar Modo -->
-        <div id="pool-step-2" class="hidden flex-1 overflow-y-auto flex flex-col text-left space-y-4">
           <div>
-            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Modo</label>
+            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Tandas por turno</label>
             <div class="grid grid-cols-2 gap-2">
-              <button id="btn-pool-modo-torneo" onclick="setPoolModo('torneo')" class="bg-blue-600 text-white border border-blue-500 py-2 rounded-lg font-bold text-sm transition-colors">Torneo</button>
-              <button id="btn-pool-modo-americana" onclick="setPoolModo('americana')" class="bg-gray-700 text-gray-300 border border-gray-600 py-2 rounded-lg font-bold text-sm transition-colors">Americana</button>
+              <button onclick="setPoolTandas(2)" id="btn-pool-tandas-2"
+                class="bg-blue-600 text-white border border-blue-500 py-1.5 rounded-lg font-bold text-sm transition-colors">Dobles</button>
+              <button onclick="setPoolTandas(3)" id="btn-pool-tandas-3"
+                class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">Triples</button>
             </div>
           </div>
-          
-          <div id="pool-config-torneo" class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Cantidad de Hélices</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button onclick="setPoolHelices(6)" id="btn-pool-helices-6" class="bg-blue-600 text-white border border-blue-500 py-1.5 rounded-lg font-bold text-sm transition-colors">6</button>
-                <button onclick="setPoolHelices(9)" id="btn-pool-helices-9" class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">9</button>
-                <button onclick="setPoolHelices(12)" id="btn-pool-helices-12" class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">12</button>
-              </div>
-            </div>
-            
-            <div>
-              <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Tandas por turno</label>
-              <div class="grid grid-cols-2 gap-2">
-                <button onclick="setPoolTandas(2)" id="btn-pool-tandas-2" class="bg-blue-600 text-white border border-blue-500 py-1.5 rounded-lg font-bold text-sm transition-colors">Dobles</button>
-                <button onclick="setPoolTandas(3)" id="btn-pool-tandas-3" class="bg-gray-700 text-gray-300 border border-gray-600 py-1.5 rounded-lg font-bold text-sm transition-colors">Triples</button>
-              </div>
-            </div>
-          </div>
+        </div>
 
-          <div class="pt-4 flex gap-2 mt-auto">
-            <div class="flex-1">
-              <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Inscripción ($)</label>
-              <input type="number" id="input-pool-inscripcion" value="0" min="0" step="100" class="w-full bg-gray-900 border border-gray-700 text-white p-2 rounded-xl text-center focus:outline-none focus:border-purple-500 transition-colors">
-            </div>
+        <div class="pt-4 flex gap-2 mt-auto">
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Inscripción ($)</label>
+            <input type="number" id="input-pool-inscripcion" value="0" min="0" step="100"
+              class="w-full bg-gray-900 border border-gray-700 text-white p-2 rounded-xl text-center focus:outline-none focus:border-purple-500 transition-colors">
           </div>
+        </div>
 
-          <div class="pt-4 flex gap-2 mt-auto">
-            <button
-              onclick="volverPaso1Pool()"
-              class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-950 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white font-semibold py-3 rounded-xl text-sm transition"
-            >
-              Atrás
-            </button>
-            <button
-              onclick="confirmarIniciarPool()"
-              class="flex-1 bg-lime-400 hover:bg-lime-500 text-gray-950 dark:bg-purple-600 dark:hover:bg-purple-500 dark:text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 text-sm uppercase tracking-wide transition"
-            >
-              Empezar Pool!
-            </button>
-          </div>
+        <div class="pt-4 flex gap-2 mt-auto">
+          <button onclick="volverPaso1Pool()"
+            class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-950 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white font-semibold py-3 rounded-xl text-sm transition">
+            Atrás
+          </button>
+          <button onclick="confirmarIniciarPool()"
+            class="flex-1 bg-lime-400 hover:bg-lime-500 text-gray-950 dark:bg-purple-600 dark:hover:bg-purple-500 dark:text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 text-sm uppercase tracking-wide transition">
+            Empezar Pool!
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div id="wrapper-pdf" class="hidden absolute top-0 left-0 w-full bg-white z-[9999] p-8 text-black font-sans" style="font-family: 'Oswald', Arial, sans-serif;">
-      <div style="max-width: 800px; margin: 0 auto;">
-        <div class="pdf-page bg-white">
-          <!-- Header Oficial -->
-          <div style="border-bottom: 4px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
-            <div>
-              <h1 style="font-size: 32px; font-weight: 900; color: #1e3a8a; margin: 0; letter-spacing: 1px; text-transform: uppercase;">Anotador Pulltech</h1>
-              <h2 style="font-size: 16px; color: #64748b; margin: 5px 0 0 0; font-weight: 500;">Reporte Oficial de Competición</h2>
-            </div>
-            <div style="text-align: right;">
-              <div id="pdf-fecha" style="font-size: 14px; font-weight: bold; color: #334155;"></div>
-              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Generado Automáticamente</div>
-            </div>
+  <!-- Modal: Opciones de Desempate -->
+  <div id="modal-desempate-opciones" class="hidden modal-overlay z-[120]">
+    <div class="modal-content max-w-md w-full text-center p-6 card-base shadow-2xl rounded-3xl border border-gray-700/80 space-y-4">
+      <div class="text-center">
+        <h3 class="text-xl font-black uppercase text-yellow-400 tracking-wider text-center">
+          DESEMPATE
+        </h3>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Opcion 1: Muerte Súbita -->
+        <button onclick="confirmarDesempateSeleccionado('muerte_subita')" class="w-full text-left p-4 rounded-2xl bg-gray-800/90 hover:bg-gray-700/90 border border-gray-700 transition flex items-center justify-between group cursor-pointer">
+          <div>
+            <div class="font-bold text-sm text-white group-hover:text-yellow-400 transition-colors">Muerte Súbita</div>
+            <div class="text-xs text-gray-400">Tirar de 1 hélice</div>
           </div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 opacity-80 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
 
-          <div id="pdf-seccion-tabla">
+        <!-- Opcion 2: Tandas de 2 hélices -->
+        <button onclick="confirmarDesempateSeleccionado('tandas_2')" class="w-full text-left p-4 rounded-2xl bg-gray-800/90 hover:bg-gray-700/90 border border-gray-700 transition flex items-center justify-between group cursor-pointer">
+          <div>
+            <div class="font-bold text-sm text-white group-hover:text-yellow-400 transition-colors">Tandas de 2 hélices</div>
+            <div class="text-xs text-gray-400">2 hélices por turno</div>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 opacity-80 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <!-- Opcion 3: Americana -->
+        <button onclick="confirmarDesempateSeleccionado('americana')" class="w-full text-left p-4 rounded-2xl bg-gray-800/90 hover:bg-gray-700/90 border border-gray-700 transition flex items-center justify-between group cursor-pointer">
+          <div>
+            <div class="font-bold text-sm text-white group-hover:text-yellow-400 transition-colors">Americana</div>
+            <div class="text-xs text-gray-400">Tirar hasta errar para cambiar de turno (máx. 5 por turno)</div>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 opacity-80 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wrapper-pdf" class="hidden absolute top-0 left-0 w-full bg-white z-[9999] p-8 text-black font-sans"
+    style="font-family: 'Oswald', Arial, sans-serif;">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <div class="pdf-page bg-white p-6 md:p-8">
+        <!-- Header Oficial -->
+        <div
+          style="border-bottom: 4px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h1
+              style="font-size: 32px; font-weight: 900; color: #1e3a8a; margin: 0; letter-spacing: 1px; text-transform: uppercase;">
+              Anotador Pulltech</h1>
+            <h2 style="font-size: 16px; color: #64748b; margin: 5px 0 0 0; font-weight: 500;">Reporte Oficial de
+              Competición</h2>
+          </div>
+          <div style="text-align: right;">
+            <div id="pdf-fecha" style="font-size: 14px; font-weight: bold; color: #334155;"></div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Generado Automáticamente</div>
+          </div>
+        </div>
+
+        <div id="pdf-seccion-tabla">
           <!-- Título Tabla -->
-          <h3 id="pdf-titulo-tabla" style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 15px; border-left: 5px solid #2563eb; padding-left: 15px;">
+          <h3 id="pdf-titulo-tabla"
+            style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 15px; border-left: 5px solid #2563eb; padding-left: 15px;">
             Clasificación General
           </h3>
-  
+
           <!-- Tabla -->
-          <div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <div
+            style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
               <thead style="background-color: #1e293b; color: white;">
                 <tr>
-                  <th style="padding: 14px 20px; text-align: left; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Tirador / Grupo</th>
-                  <th style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Tiros</th>
-                  <th style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; color: #4ade80;">Pegó</th>
-                  <th style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; color: #f87171;">Erró</th>
-                  <th id="pdf-col-dinamica-header" style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">P. Totales</th>
-                  <th style="padding: 14px 20px; text-align: right; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Monto</th>
+                  <th
+                    style="padding: 14px 20px; text-align: left; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">
+                    Tirador / Grupo</th>
+                  <th
+                    style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">
+                    Tiros</th>
+                  <th
+                    style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; color: #4ade80;">
+                    Pegó</th>
+                  <th
+                    style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; color: #f87171;">
+                    Erró</th>
+                  <th id="pdf-col-dinamica-header"
+                    style="padding: 14px 20px; text-align: center; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">
+                    P. Totales</th>
+                  <th
+                    style="padding: 14px 20px; text-align: right; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">
+                    Monto</th>
                 </tr>
               </thead>
               <tbody id="pdf-tabla-cuerpo" style="color: #1e293b;">
@@ -971,363 +1035,358 @@
               </tbody>
               <tfoot style="background-color: #f8fafc; border-top: 2px solid #cbd5e1;">
                 <tr>
-                  <td colspan="5" style="padding: 16px 20px; text-align: right; font-weight: 800; color: #334155; text-transform: uppercase; font-size: 14px;">Total Recaudado (Grupos excluidos)</td>
-                  <td id="pdf-total-recaudado" style="padding: 16px 20px; text-align: right; font-weight: 900; color: #0f172a; font-size: 18px;">$0</td>
+                  <td colspan="5"
+                    style="padding: 16px 20px; text-align: right; font-weight: 800; color: #334155; text-transform: uppercase; font-size: 14px;">
+                    Total Recaudado (Grupos excluidos)</td>
+                  <td id="pdf-total-recaudado"
+                    style="padding: 16px 20px; text-align: right; font-weight: 900; color: #0f172a; font-size: 18px;">$0
+                  </td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
-        </div> <!-- Close pdf-page bg-white -->
+      </div> <!-- Close pdf-page bg-white -->
 
-        <div class="pdf-page bg-white" id="pdf-seccion-secuencias" style="page-break-before: always; margin-top: 40px; padding-top: 40px; border-top: 2px dashed #cbd5e1;">
-          <h3 style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 25px; border-left: 5px solid #2563eb; padding-left: 15px;">
-            Secuencias de Disparos
-          </h3>
-          <div id="pdf-secuencias-cuerpo" style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- Javascript inyectará secuencias aquí -->
-          </div>
-        </div>
-        
-        <div class="pdf-page bg-white" id="pdf-seccion-pools" style="page-break-before: always; margin-top: 40px; padding-top: 40px; border-top: 2px dashed #cbd5e1; display: none;">
-          <h3 style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 25px; border-left: 5px solid #2563eb; padding-left: 15px;">
-            Historial de Pools
-          </h3>
-          <div id="pdf-pools-cuerpo" style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- Javascript inyectará las pools aquí -->
-          </div>
-        </div>
-        
-        <div id="pdf-footer-contable" style="margin-top: 50px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-          Documento contable generado por Pulltech. Todos los derechos reservados.
+      <div class="pdf-page bg-white p-6 md:p-8" id="pdf-seccion-secuencias"
+        style="page-break-before: always; margin-top: 40px; padding-top: 40px; border-top: 2px dashed #cbd5e1;">
+        <h3
+          style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 25px; border-left: 5px solid #2563eb; padding-left: 15px;">
+          Secuencias de Disparos
+        </h3>
+        <div id="pdf-secuencias-cuerpo" style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Javascript inyectará secuencias aquí -->
         </div>
       </div>
+
+      <div class="pdf-page bg-white p-6 md:p-8" id="pdf-seccion-pools"
+        style="page-break-before: always; margin-top: 40px; padding-top: 40px; border-top: 2px dashed #cbd5e1; display: none;">
+        <h3
+          style="font-size: 20px; text-transform: uppercase; color: #0f172a; font-weight: 800; margin-bottom: 25px; border-left: 5px solid #2563eb; padding-left: 15px;">
+          Historial de Pools
+        </h3>
+        <div id="pdf-pools-cuerpo" style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Javascript inyectará las pools aquí -->
+        </div>
+      </div>
+
+      <div id="pdf-footer-contable"
+        style="margin-top: 50px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+        Documento contable generado por Pulltech. Todos los derechos reservados.
+      </div>
     </div>
+  </div>
 
-    <div id="wrapper-individual-pdf" class="hidden absolute top-0 left-0 w-full bg-white z-[9999] p-8 text-black font-sans" style="font-family: 'Oswald', Arial, sans-serif;">
-      <div style="max-width: 600px; margin: 0 auto;">
-        <!-- Header Ticket -->
-        <div style="border-bottom: 3px dashed #94a3b8; padding-bottom: 25px; margin-bottom: 25px; text-align: center;">
-          <h1 style="font-size: 36px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: 2px; text-transform: uppercase;">Anotador Pulltech</h1>
-          <h2 style="font-size: 14px; color: #64748b; margin: 8px 0 0 0; text-transform: uppercase; letter-spacing: 3px;">Liquidación de Tirador</h2>
+  <div id="wrapper-individual-pdf"
+    class="hidden absolute top-0 left-0 w-full bg-white z-[9999] p-8 text-black font-sans"
+    style="font-family: 'Oswald', Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto;" class="pdf-page bg-white p-6 md:p-8">
+      <!-- Header Ticket -->
+      <div style="border-bottom: 3px dashed #94a3b8; padding-bottom: 25px; margin-bottom: 25px; text-align: center;">
+        <h1
+          style="font-size: 36px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: 2px; text-transform: uppercase;">
+          Anotador Pulltech</h1>
+        <h2 style="font-size: 14px; color: #64748b; margin: 8px 0 0 0; text-transform: uppercase; letter-spacing: 3px;">
+          Liquidación de Tirador</h2>
+      </div>
+
+      <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
+        <div>
+          <div
+            style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px;">
+            Tirador</div>
+          <div id="pdf-ind-nombre"
+            style="font-size: 28px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;">---</div>
         </div>
-
-        <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: baseline;">
-          <div>
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px;">Tirador</div>
-            <div id="pdf-ind-nombre" style="font-size: 28px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;">---</div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px;">Fecha</div>
-            <div id="pdf-ind-fecha" style="font-size: 16px; font-weight: bold; color: #334155;">---</div>
-          </div>
+        <div style="text-align: right;">
+          <div
+            style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px;">
+            Fecha</div>
+          <div id="pdf-ind-fecha" style="font-size: 16px; font-weight: bold; color: #334155;">---</div>
         </div>
+      </div>
 
-        <!-- Resumen de Actividad -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
-            <h3 style="font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 800; margin: 0 0 10px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Actividad de Tiro</h3>
-            <table style="width: 100%; font-size: 14px;">
-              <tr>
-                <td style="color: #64748b; padding: 4px 0;">Lanzamientos:</td>
-                <td style="text-align: right; font-weight: bold;" id="pdf-ind-total">0</td>
-              </tr>
-              <tr>
-                <td style="color: #64748b; padding: 4px 0;">Pegadas:</td>
-                <td style="text-align: right; font-weight: bold; color: #16a34a;" id="pdf-ind-pegados">0</td>
-              </tr>
-              <tr>
-                <td style="color: #64748b; padding: 4px 0;">Erradas:</td>
-                <td style="text-align: right; font-weight: bold; color: #dc2626;" id="pdf-ind-errados">0</td>
-              </tr>
-            </table>
-          </div>
-          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
-            <h3 style="font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 800; margin: 0 0 10px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Rendimiento</h3>
-            <table style="width: 100%; font-size: 14px;">
-              <tr>
-                <td style="color: #64748b; padding: 4px 0;">Efectividad:</td>
-                <td style="text-align: right; font-weight: bold; color: #2563eb;" id="pdf-ind-efectividad">0%</td>
-              </tr>
-              <tr>
-                <td style="color: #64748b; padding: 4px 0;">Racha Máxima:</td>
-                <td style="text-align: right; font-weight: bold; color: #d97706;" id="pdf-ind-racha">0</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-
-        <!-- Sequence -->
-        <div style="margin-bottom: 30px;">
-          <h4 style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 800; margin-bottom: 10px; letter-spacing: 0.5px;">Secuencia de Disparos</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 4px;" id="pdf-ind-cadena"></div>
-        </div>
-
-        <!-- Multi-mode -->
-        <div id="pdf-ind-multi-container" style="display: none; margin-bottom: 30px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fffbeb;">
-          <h4 style="font-size: 11px; text-transform: uppercase; color: #b45309; font-weight: 800; margin-bottom: 10px; letter-spacing: 0.5px;">Participación en Grupos</h4>
-          <div id="pdf-ind-multi-secuencias" style="font-size: 12px; line-height: 1.6; color: #78350f;"></div>
-        </div>
-
-        <!-- Invoice Box -->
-        <div style="border: 2px solid #1e293b; border-radius: 12px; overflow: hidden; margin-bottom: 40px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
-          <div style="background-color: #1e293b; padding: 15px 20px;">
-            <h4 style="margin: 0; font-size: 14px; text-transform: uppercase; color: white; font-weight: 800; letter-spacing: 1px;">Liquidación Final</h4>
-          </div>
-          <table style="width: 100%; font-size: 15px; text-align: left; border-collapse: collapse;">
-            <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Hélices Individuales</td>
-              <td style="padding: 16px 20px; color: #64748b; text-align: right;"><span id="pdf-ind-cant-ind">0</span> x $<span id="pdf-ind-unit-ind">0</span></td>
-              <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span id="pdf-ind-total-ind">0</span></td>
+      <!-- Resumen de Actividad -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
+          <h3
+            style="font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 800; margin: 0 0 10px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+            Actividad de Tiro</h3>
+          <table style="width: 100%; font-size: 14px;">
+            <tr>
+              <td style="color: #64748b; padding: 4px 0;">Lanzamientos:</td>
+              <td style="text-align: right; font-weight: bold;" id="pdf-ind-total">0</td>
             </tr>
-            <tr id="pdf-ind-multi-linea" style="display: none; border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Hélices de Equipo (Proporcional)</td>
-              <td style="padding: 16px 20px; color: #64748b; text-align: right;"><span id="pdf-ind-cant-multi">0</span> x $<span id="pdf-ind-unit-multi">0</span></td>
-              <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span id="pdf-ind-total-multi">0</span></td>
+            <tr>
+              <td style="color: #64748b; padding: 4px 0;">Pegadas:</td>
+              <td style="text-align: right; font-weight: bold; color: #16a34a;" id="pdf-ind-pegados">0</td>
             </tr>
-            <tr id="pdf-ind-pool-line" style="display: none; border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Inscripción Pool</td>
-              <td style="padding: 16px 20px; color: #64748b; text-align: right;">-</td>
-              <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span id="pdf-ind-total-pool">0</span></td>
-            </tr>
-            <tr style="background-color: #f1f5f9;">
-              <td colspan="2" style="padding: 25px 20px; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase; text-align: right;">TOTAL A ABONAR</td>
-              <td style="padding: 25px 20px; font-size: 24px; font-weight: 900; color: #1e3a8a; text-align: right;">$<span id="pdf-ind-monto">0</span></td>
+            <tr>
+              <td style="color: #64748b; padding: 4px 0;">Erradas:</td>
+              <td style="text-align: right; font-weight: bold; color: #dc2626;" id="pdf-ind-errados">0</td>
             </tr>
           </table>
         </div>
-
-        <div style="text-align: center; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-          Este comprobante no posee validez fiscal. Generado por Anotador Pulltech.
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
+          <h3
+            style="font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 800; margin: 0 0 10px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+            Rendimiento</h3>
+          <table style="width: 100%; font-size: 14px;">
+            <tr>
+              <td style="color: #64748b; padding: 4px 0;">Efectividad:</td>
+              <td style="text-align: right; font-weight: bold; color: #2563eb;" id="pdf-ind-efectividad">0%</td>
+            </tr>
+            <tr>
+              <td style="color: #64748b; padding: 4px 0;">Racha Máxima:</td>
+              <td style="text-align: right; font-weight: bold; color: #d97706;" id="pdf-ind-racha">0</td>
+            </tr>
+          </table>
         </div>
       </div>
+
+      <!-- Sequence -->
+      <div style="margin-bottom: 30px;">
+        <h4
+          style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 800; margin-bottom: 10px; letter-spacing: 0.5px;">
+          Secuencia de Disparos</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;" id="pdf-ind-cadena"></div>
+      </div>
+
+      <!-- Multi-mode -->
+      <div id="pdf-ind-multi-container"
+        style="display: none; margin-bottom: 30px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fffbeb;">
+        <h4
+          style="font-size: 11px; text-transform: uppercase; color: #b45309; font-weight: 800; margin-bottom: 10px; letter-spacing: 0.5px;">
+          Participación en Grupos</h4>
+        <div id="pdf-ind-multi-secuencias" style="font-size: 12px; line-height: 1.6; color: #78350f;"></div>
+      </div>
+
+      <!-- Invoice Box -->
+      <div
+        style="border: 2px solid #1e293b; border-radius: 12px; overflow: hidden; margin-bottom: 40px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+        <div style="background-color: #1e293b; padding: 15px 20px;">
+          <h4
+            style="margin: 0; font-size: 14px; text-transform: uppercase; color: white; font-weight: 800; letter-spacing: 1px;">
+            Liquidación Final</h4>
+        </div>
+        <table style="width: 100%; font-size: 15px; text-align: left; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Hélices Individuales</td>
+            <td style="padding: 16px 20px; color: #64748b; text-align: right;"><span id="pdf-ind-cant-ind">0</span> x
+              $<span id="pdf-ind-unit-ind">0</span></td>
+            <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span
+                id="pdf-ind-total-ind">0</span></td>
+          </tr>
+          <tr id="pdf-ind-multi-linea" style="display: none; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Hélices de Equipo (Proporcional)</td>
+            <td style="padding: 16px 20px; color: #64748b; text-align: right;"><span id="pdf-ind-cant-multi">0</span> x
+              $<span id="pdf-ind-unit-multi">0</span></td>
+            <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span
+                id="pdf-ind-total-multi">0</span></td>
+          </tr>
+          <tr id="pdf-ind-pool-line" style="display: none; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 16px 20px; color: #334155; font-weight: 500;">Inscripción Pool</td>
+            <td style="padding: 16px 20px; color: #64748b; text-align: right;">-</td>
+            <td style="padding: 16px 20px; font-weight: bold; color: #0f172a; text-align: right;">$<span
+                id="pdf-ind-total-pool">0</span></td>
+          </tr>
+          <tr style="background-color: #f1f5f9;">
+            <td colspan="2"
+              style="padding: 25px 20px; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase; text-align: right;">
+              TOTAL A ABONAR</td>
+            <td style="padding: 25px 20px; font-size: 24px; font-weight: 900; color: #1e3a8a; text-align: right;">$<span
+                id="pdf-ind-monto">0</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div
+        style="text-align: center; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+        Este comprobante no posee validez fiscal. Generado por Anotador Pulltech.
+      </div>
     </div>
+  </div>
 
-    <!-- Bottom Tab Bar Flotante -->
-    <!-- Bottom Tab Bar -->
-    <nav
-      id="bottom-tab-bar"
-      class="hidden fixed bottom-0 left-0 z-40 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] transition-all duration-300 select-none pb-[env(safe-area-inset-bottom)]"
-    >
-      <div class="w-full max-w-xl mx-auto flex items-center justify-around px-2 py-2 relative">
-        <!-- Tab Inicio -->
-        <button
-          id="tab-btn-inicio"
-          onclick="navegarTab('inicio')"
-          class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Inicio</span>
-        </button>
+  <!-- Bottom Tab Bar Flotante -->
+  <!-- Bottom Tab Bar -->
+  <nav id="bottom-tab-bar"
+    class="hidden fixed bottom-0 left-0 z-40 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] transition-all duration-300 select-none pb-[env(safe-area-inset-bottom)]">
+    <div class="w-full max-w-xl mx-auto flex items-center justify-around px-2 py-2 relative">
+      <!-- Tab Inicio -->
+      <button id="tab-btn-inicio" onclick="navegarTab('inicio')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Inicio</span>
+      </button>
 
-        <!-- Tab Planilla -->
-        <button
-          id="tab-btn-planilla"
-          onclick="navegarTab('planilla')"
-          class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-          <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Planilla</span>
-        </button>
+      <!-- Tab Planilla -->
+      <button id="tab-btn-planilla" onclick="navegarTab('planilla')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Planilla</span>
+      </button>
 
-        <!-- Botón Central FAB con Menú Desplegable -->
-        <div id="wrapper-fab-pool" class="hidden relative -top-5 items-center justify-center px-1 flex-shrink-0">
-          <!-- Menú Desplegable de Opciones Rápidas -->
-          <div
-            id="menu-fab-opciones"
-            class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 mb-3 w-60 bg-gray-900/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 shadow-2xl rounded-2xl p-2 flex-col gap-1 z-50 animate-fade-in select-none"
-          >
-            <button
-              onclick="cerrarMenuFab(); abrirModalPool();"
-              class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-gray-800 text-purple-400 dark:text-purple-300 font-bold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8m-4-4v4M7 4h10M17 4v7a5 5 0 01-10 0V4M5 9a3 3 0 01-3-3V4h5m12 5a3 3 0 003-3V4h-5" />
-              </svg>
-              <span>Iniciar Pool</span>
-            </button>
-            <button
-              onclick="cerrarMenuFab(); verPodioParcial();"
-              class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-gray-800 text-blue-400 dark:text-yellow-400 font-bold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer border-t border-gray-800/80"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-              </svg>
-              <span>Ver Clasificación Parcial</span>
-            </button>
-            <button
-              onclick="cerrarMenuFab(); finalizarSesion();"
-              class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-red-900/30 text-red-400 font-extrabold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer border-t border-gray-800/80"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 dark:text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-1.385a1.125 1.125 0 011.01 0l3.44 1.72a1.125 1.125 0 001.01 0l3.44-1.72a1.125 1.125 0 011.01 0l2.77 1.385M3 15V6m0 0l2.77-1.385a1.125 1.125 0 011.01 0l3.44 1.72a1.125 1.125 0 001.01 0l3.44-1.72a1.125 1.125 0 011.01 0l2.77 1.385M18.75 4.5v10.5" />
-              </svg>
-              <span>Finalizar Sesión</span>
-            </button>
-          </div>
-
-          <button
-            onclick="toggleMenuFab()"
-            id="btn-fab-pool"
-            title="Opciones Rápidas"
-            class="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 hover:scale-105 text-white shadow-xl flex items-center justify-center transition-all duration-300 active:scale-90 border-4 border-gray-900 cursor-pointer"
-          >
-            <svg id="icono-fab-plus" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 stroke-[3] transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      <!-- Botón Central FAB con Menú Desplegable -->
+      <div id="wrapper-fab-pool" class="hidden relative -top-5 items-center justify-center px-1 flex-shrink-0">
+        <!-- Menú Desplegable de Opciones Rápidas -->
+        <div id="menu-fab-opciones"
+          class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 mb-3 w-60 bg-gray-900/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 shadow-2xl rounded-2xl p-2 flex-col gap-1 z-50 animate-fade-in select-none">
+          <button onclick="cerrarMenuFab(); abrirModalPool();"
+            class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-gray-800 text-purple-400 dark:text-purple-300 font-bold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400 flex-shrink-0" fill="none"
+              viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M8 21h8m-4-4v4M7 4h10M17 4v7a5 5 0 01-10 0V4M5 9a3 3 0 01-3-3V4h5m12 5a3 3 0 003-3V4h-5" />
             </svg>
+            <span>Iniciar Pool</span>
+          </button>
+          <button onclick="cerrarMenuFab(); verPodioParcial();"
+            class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-gray-800 text-blue-400 dark:text-yellow-400 font-bold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer border-t border-gray-800/80">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <span>Ver Clasificación Parcial</span>
+          </button>
+          <button onclick="cerrarMenuFab(); finalizarSesion();"
+            class="w-full text-left px-3.5 py-3 rounded-xl hover:bg-red-900/30 text-red-400 font-extrabold text-xs md:text-sm flex items-center gap-3 transition-colors active:scale-95 cursor-pointer border-t border-gray-800/80">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 dark:text-red-400 flex-shrink-0"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 3v1.5M3 21v-6m0 0l2.77-1.385a1.125 1.125 0 011.01 0l3.44 1.72a1.125 1.125 0 001.01 0l3.44-1.72a1.125 1.125 0 011.01 0l2.77 1.385M3 15V6m0 0l2.77-1.385a1.125 1.125 0 011.01 0l3.44 1.72a1.125 1.125 0 001.01 0l3.44-1.72a1.125 1.125 0 011.01 0l2.77 1.385M18.75 4.5v10.5" />
+            </svg>
+            <span>Cerrar Planilla</span>
           </button>
         </div>
 
-        <!-- Tab Historial -->
-        <button
-          id="tab-btn-historial"
-          onclick="navegarTab('historial')"
-          class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <button onclick="toggleMenuFab()" id="btn-fab-pool" title="Opciones Rápidas"
+          class="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 hover:scale-105 text-white shadow-xl flex items-center justify-center transition-all duration-300 active:scale-90 border-4 border-gray-900 cursor-pointer">
+          <svg id="icono-fab-plus" xmlns="http://www.w3.org/2000/svg"
+            class="h-7 w-7 stroke-[3] transition-transform duration-300" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
-          <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Historial</span>
         </button>
+      </div>
 
-        <!-- Tab Ajustes -->
-        <button
-          id="tab-btn-ajustes"
-          onclick="navegarTab('ajustes')"
-          class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <!-- Tab Historial -->
+      <button id="tab-btn-historial" onclick="navegarTab('historial')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Historial</span>
+      </button>
+
+      <!-- Tab Ajustes -->
+      <button id="tab-btn-ajustes" onclick="navegarTab('ajustes')"
+        class="tab-item flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex-1 active:scale-95 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 tab-icon" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Ajustes</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Modal Base Tiradores -->
+  <div id="modal-base-tiradores"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-start pt-16 sm:items-center sm:pt-4 justify-center p-4 z-50 transition-all">
+    <div class="p-5 rounded-2xl shadow-2xl border w-full max-w-sm md:max-w-md space-y-4 container-dinamico card-dark">
+      <div class="flex justify-between items-start border-b border-gray-700/50 pb-2">
+        <h3 class="text-base md:text-lg font-extrabold text-blue-400 uppercase tracking-wider">
+          Añadir Tirador
+        </h3>
+        <button onclick="cerrarModalBaseTiradores()" class="text-gray-400 hover:text-white font-bold text-lg">
+          ✕
+        </button>
+      </div>
+
+      <div class="flex gap-2">
+        <input type="text" id="nombre-tirador" placeholder="Nombre del tirador..."
+          onkeydown="if(event.key==='Enter') { agregarTirador(); cerrarModalBaseTiradores(); }"
+          class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm md:text-base input-dinamico" />
+        <button onclick="agregarTirador(); cerrarModalBaseTiradores();"
+          class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg transition text-sm md:text-base active:scale-95 whitespace-nowrap">
+          Añadir
+        </button>
+      </div>
+
+      <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wide mt-4 border-t border-gray-700/50 pt-3">
+        Tiradores Frecuentes
+      </h4>
+      <div id="lista-base-tiradores" class="max-h-64 overflow-y-auto space-y-2 pr-2">
+        <!-- Lista generada en JS -->
+      </div>
+
+      <div class="pt-2">
+        <button onclick="cerrarModalBaseTiradores()"
+          class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajustes de la Sesión -->
+  <div id="modal-ajustes-sesion"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
+    <div
+      class="p-5 md:p-6 rounded-2xl shadow-2xl border w-full max-w-sm md:max-w-md space-y-5 container-dinamico card-dark">
+      <div class="flex justify-between items-center border-b border-gray-700/50 pb-3">
+        <h3
+          class="text-base md:text-lg font-extrabold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span class="text-[11px] font-semibold tracking-tight mt-0.5 tab-label">Ajustes</span>
+          Ajustes de la Sesión
+        </h3>
+        <button onclick="cerrarModalAjustesSesion()"
+          class="text-gray-400 hover:text-white font-bold text-lg p-1 cursor-pointer">
+          ✕
         </button>
       </div>
-    </nav>
 
-    <!-- Modal Base Tiradores -->
-    <div
-      id="modal-base-tiradores"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-start pt-16 sm:items-center sm:pt-4 justify-center p-4 z-50 transition-all"
-    >
-      <div
-        class="p-5 rounded-2xl shadow-2xl border w-full max-w-sm md:max-w-md space-y-4 container-dinamico card-dark"
-      >
-        <div class="flex justify-between items-start border-b border-gray-700/50 pb-2">
-          <h3 class="text-base md:text-lg font-extrabold text-blue-400 uppercase tracking-wider">
-            Añadir Tirador
-          </h3>
-          <button
-            onclick="cerrarModalBaseTiradores()"
-            class="text-gray-400 hover:text-white font-bold text-lg"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div class="flex gap-2">
-          <input
-            type="text"
-            id="nombre-tirador"
-            placeholder="Nombre del tirador..."
-            onkeydown="if(event.key==='Enter') { agregarTirador(); cerrarModalBaseTiradores(); }"
-            class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-sm md:text-base input-dinamico"
-          />
-          <button
-            onclick="agregarTirador(); cerrarModalBaseTiradores();"
-            class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg transition text-sm md:text-base active:scale-95 whitespace-nowrap"
-          >
-            Añadir
-          </button>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1.5">Precio por Hélice ($)</label>
+          <input type="number" id="precio-helice" value="0" min="0" onchange="cambiarPrecio()" oninput="cambiarPrecio()"
+            class="input-base font-mono text-center text-base py-2.5 w-full" placeholder="0" />
         </div>
 
-        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wide mt-4 border-t border-gray-700/50 pt-3">
-          Tiradores Frecuentes
-        </h4>
-        <div id="lista-base-tiradores" class="max-h-64 overflow-y-auto space-y-2 pr-2">
-          <!-- Lista generada en JS -->
-        </div>
-
-        <div class="pt-2">
-          <button
-            onclick="cerrarModalBaseTiradores()"
-            class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-xl text-sm transition"
-          >
-            Cerrar
-          </button>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1.5">Mínimo para Podio (Hélices)</label>
+          <input type="number" id="min-podio" value="10" min="0" onchange="cambiarMinimumPodio()"
+            oninput="cambiarMinimumPodio()" class="input-base font-mono text-center text-base py-2.5 w-full"
+            placeholder="10" />
         </div>
       </div>
-    </div>
 
-    <!-- Modal Ajustes de la Sesión -->
-    <div
-      id="modal-ajustes-sesion"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all"
-    >
-      <div
-        class="p-5 md:p-6 rounded-2xl shadow-2xl border w-full max-w-sm md:max-w-md space-y-5 container-dinamico card-dark"
-      >
-        <div class="flex justify-between items-center border-b border-gray-700/50 pb-3">
-          <h3 class="text-base md:text-lg font-extrabold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Ajustes de la Sesión
-          </h3>
-          <button
-            onclick="cerrarModalAjustesSesion()"
-            class="text-gray-400 hover:text-white font-bold text-lg p-1 cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-300 mb-1.5">Precio por Hélice ($)</label>
-            <input
-              type="number"
-              id="precio-helice"
-              value="0"
-              min="0"
-              onchange="cambiarPrecio()"
-              oninput="cambiarPrecio()"
-              class="input-base font-mono text-center text-base py-2.5 w-full"
-              placeholder="0"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-300 mb-1.5">Mínimo para Podio (Hélices)</label>
-            <input
-              type="number"
-              id="min-podio"
-              value="10"
-              min="0"
-              onchange="cambiarMinimumPodio()"
-              oninput="cambiarMinimumPodio()"
-              class="input-base font-mono text-center text-base py-2.5 w-full"
-              placeholder="10"
-            />
-          </div>
-        </div>
-
-        <div class="pt-2">
-          <button
-            onclick="cerrarModalAjustesSesion()"
-            class="btn-primary w-full py-3 font-bold text-sm cursor-pointer"
-          >
-            Guardar y Cerrar
-          </button>
-        </div>
+      <div class="pt-2">
+        <button onclick="cerrarModalAjustesSesion()" class="btn-primary w-full py-3 font-bold text-sm cursor-pointer">
+          Guardar y Cerrar
+        </button>
       </div>
     </div>
+  </div>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>

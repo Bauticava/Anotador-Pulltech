@@ -130,6 +130,45 @@ function showSnackbar(mensaje) {
       };
       let historialPools = [];
       let lastPlanillaSubScreen = "pedana";
+      let seleccionadosPoolOrden = [];
+      let pendingDesempateData = null;
+
+      function sincronizarIdSeleccionadoPool() {
+        if (!poolState || !poolState.activa) return;
+        
+        if (poolState.esDesempate) {
+          if (poolState.participantesDesempate && poolState.participantesDesempate.length > 0) {
+            let count = 0;
+            while (count < poolState.participantesDesempate.length) {
+              const id = poolState.participantesDesempate[poolState.indiceDesempateActual];
+              const s = poolState.participantesStats[id];
+              if (s && s.abandonado) {
+                poolState.indiceDesempateActual = (poolState.indiceDesempateActual + 1) % poolState.participantesDesempate.length;
+                count++;
+              } else {
+                break;
+              }
+            }
+            idSeleccionado = poolState.participantesDesempate[poolState.indiceDesempateActual];
+          }
+        } else {
+          if (poolState.participantes && poolState.participantes.length > 0) {
+            let count = 0;
+            while (count < poolState.participantes.length) {
+              const id = poolState.participantes[poolState.indiceActual];
+              const s = poolState.participantesStats[id];
+              const inactivo = s && (s.abandonado || (poolState.tipo === 'americana' && s.eliminada));
+              if (inactivo) {
+                poolState.indiceActual = (poolState.indiceActual + 1) % poolState.participantes.length;
+                count++;
+              } else {
+                break;
+              }
+            }
+            idSeleccionado = poolState.participantes[poolState.indiceActual];
+          }
+        }
+      }
 
       let modalCallback = null;
 
@@ -242,6 +281,31 @@ function showSnackbar(mensaje) {
         }
       }
 
+      window.toggleSeleccionPoolTirador = function(id, isChecked) {
+        if (isChecked) {
+          if (!seleccionadosPoolOrden.includes(id)) {
+            seleccionadosPoolOrden.push(id);
+          }
+        } else {
+          seleccionadosPoolOrden = seleccionadosPoolOrden.filter(x => x !== id);
+        }
+        actualizarBadgesOrdenPool();
+      };
+
+      function actualizarBadgesOrdenPool() {
+        tiradores.filter(t => !t.esGrupo).forEach(t => {
+          const badge = document.getElementById(`badge-orden-pool-${t.id}`);
+          if (!badge) return;
+          const idx = seleccionadosPoolOrden.indexOf(t.id);
+          if (idx !== -1) {
+            badge.textContent = `#${idx + 1}`;
+            badge.classList.remove("hidden");
+          } else {
+            badge.classList.add("hidden");
+          }
+        });
+      }
+
       window.abrirModalPool = function() {
         if (poolState && poolState.activa) {
           mostrarPoolActiva();
@@ -251,12 +315,20 @@ function showSnackbar(mensaje) {
           mostrarAlerta("Agregá tiradores primero.");
           return;
         }
+        
+        seleccionadosPoolOrden = [];
         const lista = document.getElementById("lista-participantes-pool");
         lista.innerHTML = "";
         tiradores.filter(t => !t.esGrupo).forEach(t => {
           const d = document.createElement("label");
-          d.className = "flex items-center gap-3 p-2 hover:bg-gray-700/50 rounded-lg cursor-pointer transition";
-          d.innerHTML = `<input type="checkbox" value="${t.id}" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 bg-gray-700 border-gray-600"> <span class="text-white font-bold">${t.nombre}</span>`;
+          d.className = "flex items-center justify-between p-2.5 hover:bg-gray-700/50 rounded-xl cursor-pointer transition select-none border border-gray-700/50";
+          d.innerHTML = `
+            <div class="flex items-center gap-3">
+              <input type="checkbox" value="${t.id}" onchange="toggleSeleccionPoolTirador(${t.id}, this.checked)" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 bg-gray-700 border-gray-600 cursor-pointer">
+              <span class="text-white font-bold text-sm">${t.nombre}</span>
+            </div>
+            <span id="badge-orden-pool-${t.id}" class="hidden text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full"></span>
+          `;
           lista.appendChild(d);
         });
         
@@ -354,12 +426,16 @@ function showSnackbar(mensaje) {
       };
 
       window.siguientePasoPool = function() {
-        const checkboxes = document.querySelectorAll("#lista-participantes-pool input:checked");
-        if (checkboxes.length < 2) {
-          mostrarAlerta("Seleccioná al menos 2 participantes para la pool.");
-          return;
+        if (seleccionadosPoolOrden.length < 2) {
+          const checkboxes = document.querySelectorAll("#lista-participantes-pool input:checked");
+          if (checkboxes.length < 2) {
+            mostrarAlerta("Seleccioná al menos 2 participantes para la pool.");
+            return;
+          }
+          poolState.participantes = Array.from(checkboxes).map(c => parseFloat(c.value));
+        } else {
+          poolState.participantes = [...seleccionadosPoolOrden];
         }
-        poolState.participantes = Array.from(checkboxes).map(c => parseFloat(c.value));
         
         document.getElementById("pool-step-1").classList.add("hidden");
         document.getElementById("pool-step-1").classList.remove("flex");
@@ -608,6 +684,8 @@ function showSnackbar(mensaje) {
       window.actualizarInterfazPool = function() {
         if (!poolState.activa) return;
         
+        sincronizarIdSeleccionadoPool();
+        
         const wrapperSumar = document.getElementById("wrapper-btn-sumar-pool");
         if (wrapperSumar) {
           if (poolState.activa && poolState.rondaActual === 1 && !poolState.esDesempate) {
@@ -620,7 +698,7 @@ function showSnackbar(mensaje) {
         const rTitle = document.getElementById("pool-activa-ronda");
         if (rTitle) {
           if (poolState.esDesempate) {
-            rTitle.innerHTML = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg border border-yellow-500/40 animate-pulse font-bold">DESEMPATE - Ronda ${poolState.rondaDesempate} (${poolState.tandas} hél. por turno)</span>`;
+            rTitle.innerHTML = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg border border-yellow-500/40 animate-pulse font-bold">DESEMPATE - Ronda ${poolState.rondaDesempate}</span>`;
           } else if (poolState.tipo === 'torneo') {
             rTitle.textContent = `Torneo - Ronda ${poolState.rondaActual} (${poolState.tandas} hél. por turno)`;
           } else {
@@ -631,7 +709,18 @@ function showSnackbar(mensaje) {
         const tn = document.getElementById("pool-activa-tirador-nombre");
         if (tn) {
           const sel = tiradores.find(x => x.id === idSeleccionado);
-          tn.textContent = sel ? sel.nombre : "---";
+          const statsActive = poolState.participantesStats[idSeleccionado];
+          if (sel && statsActive && !poolState.esDesempate) {
+            const targetTiros = Math.min(poolState.rondaActual * poolState.tandas, poolState.helices);
+            const pendientes = targetTiros - statsActive.tiros;
+            if (pendientes > poolState.tandas) {
+              tn.innerHTML = `${sel.nombre} <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-bold border border-yellow-500/40 ml-2">Recuperando Rondas (${pendientes} hélices)</span>`;
+            } else {
+              tn.textContent = sel.nombre;
+            }
+          } else {
+            tn.textContent = sel ? sel.nombre : "---";
+          }
         }
         
         const bd = document.getElementById("btn-pool-deshacer");
@@ -645,7 +734,7 @@ function showSnackbar(mensaje) {
            poolState.participantes.forEach(id => {
              const t = tiradores.find(x => x.id === id);
              if (!t) return;
-             const stats = poolState.participantesStats[id];
+             const stats = poolState.participantesStats[id] || { tiros: 0, pegados: 0, eliminada: false, abandonado: false, secuencia: [] };
              const div = document.createElement("div");
              
              let bgClass = "";
@@ -654,7 +743,13 @@ function showSnackbar(mensaje) {
              let pegadosColor = "";
              let extraBadge = "";
              
-             if (poolState.esDesempate) {
+             if (stats.abandonado) {
+               bgClass = currentTheme === "dark" ? "opacity-35 grayscale bg-gray-900 border-gray-800" : "opacity-35 grayscale bg-gray-200 border-gray-300";
+               nameColor = "line-through text-gray-500";
+               badgeBg = currentTheme === "dark" ? "bg-black/40" : "bg-gray-100";
+               pegadosColor = "text-red-500";
+               extraBadge = `<span class="text-[10px] bg-red-900/30 text-red-400 px-1.5 py-0.5 rounded font-bold border border-red-800/40">Abandonó</span>`;
+             } else if (poolState.esDesempate) {
                const enDesempate = poolState.participantesDesempate && poolState.participantesDesempate.includes(id);
                if (!enDesempate) {
                  bgClass = currentTheme === "dark" ? "opacity-35 grayscale bg-gray-900 border-gray-800" : "opacity-35 grayscale bg-gray-200 border-gray-300";
@@ -666,7 +761,7 @@ function showSnackbar(mensaje) {
                  nameColor = "text-white";
                  badgeBg = currentTheme === "dark" ? "bg-black/40" : "bg-white/30";
                  pegadosColor = currentTheme === "dark" ? "text-purple-500" : "text-white";
-                 extraBadge = `<span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded font-bold border border-yellow-500/30">🔥 Desempate</span>`;
+                 extraBadge = `<span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded font-bold border border-yellow-500/30">Desempate</span>`;
                } else {
                  bgClass = currentTheme === "dark" ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200 shadow-sm";
                  nameColor = currentTheme === "dark" ? "text-white" : "text-gray-900";
@@ -693,7 +788,7 @@ function showSnackbar(mensaje) {
              
              div.className = `p-3 rounded-xl border flex justify-between items-center transition-opacity ${bgClass}`;
              
-             let seqArray = stats.secuencia;
+             let seqArray = stats.secuencia || [];
              if (poolState.tipo === 'americana' && seqArray.length > 8) {
                seqArray = seqArray.slice(-8);
              }
@@ -849,7 +944,9 @@ function showSnackbar(mensaje) {
 
             poolState.tirosEnTandaActual++;
 
-            if (poolState.tirosEnTandaActual >= poolState.tandas) {
+            const esFinTandaDesempate = (poolState.modoDesempate === 'americana' && !pego) || (poolState.tirosEnTandaActual >= poolState.tandas);
+
+            if (esFinTandaDesempate) {
               poolState.indiceDesempateActual++;
               poolState.tirosEnTandaActual = 0;
 
@@ -909,20 +1006,34 @@ function showSnackbar(mensaje) {
             stats.secuencia.push(pego);
             
             poolState.tirosEnTandaActual++;
-            if (poolState.tirosEnTandaActual >= poolState.tandas || stats.tiros >= poolState.helices) {
-              poolState.indiceActual++;
+            const targetTiros = Math.min(poolState.rondaActual * poolState.tandas, poolState.helices);
+            const limiteTurnoActual = Math.max(poolState.tandas, targetTiros - (stats.tiros - poolState.tirosEnTandaActual));
+
+            if (poolState.tirosEnTandaActual >= limiteTurnoActual || stats.tiros >= poolState.helices) {
               poolState.tirosEnTandaActual = 0;
               
-              if (poolState.indiceActual >= poolState.participantes.length) {
-                poolState.indiceActual = 0;
-                poolState.rondaActual++;
-              }
-              
+              let loopCount = 0;
+              do {
+                poolState.indiceActual++;
+                if (poolState.indiceActual >= poolState.participantes.length) {
+                  poolState.indiceActual = 0;
+                  poolState.rondaActual++;
+                }
+                loopCount++;
+                const pid = poolState.participantes[poolState.indiceActual];
+                const s = poolState.participantesStats[pid];
+                const inactivo = s && (s.abandonado || s.eliminada || s.tiros >= poolState.helices);
+                if (!inactivo) break;
+              } while (loopCount < poolState.participantes.length * 2);
+
               idSeleccionado = poolState.participantes[poolState.indiceActual];
               
               let todosTerminaron = true;
               poolState.participantes.forEach(id => {
-                if (poolState.participantesStats[id].tiros < poolState.helices) todosTerminaron = false;
+                const s = poolState.participantesStats[id];
+                if (s && !s.abandonado && !s.eliminada && s.tiros < poolState.helices) {
+                  todosTerminaron = false;
+                }
               });
               
               if (todosTerminaron) {
@@ -935,7 +1046,7 @@ function showSnackbar(mensaje) {
                 const empatados = poolState.participantes.filter(id => poolState.participantesStats[id].pegados === maxPegados);
                 
                 if (empatados.length > 1) {
-                  iniciarDesempatePool(empatados, maxPegados);
+                  solicitarConfiguracionDesempate(empatados, maxPegados);
                   return;
                 } else {
                   finalizarPool();
@@ -1308,7 +1419,18 @@ window.onload = function () {
         }
       }
 
-      function iniciarNuevaSerie() {
+      function iniciarNuevaSerie(forzar = false) {
+        const tienePartidaEnCurso = (tiradores && tiradores.length > 0) || (poolState && poolState.activa);
+
+        if (!forzar && tienePartidaEnCurso) {
+          mostrarConfirmacion(
+            "⚠️ Tenés una partida en curso.\n\n¿Estás seguro de que querés iniciar una nueva sesión? Se perderán los datos no guardados de la sesión actual.",
+            () => iniciarNuevaSerie(true),
+            true
+          );
+          return;
+        }
+
         tiradores = [];
         idSeleccionado = null;
         estadoApp = "registro";
@@ -2709,7 +2831,11 @@ window.onload = function () {
           setTimeout(async () => {
             try {
               const { jsPDF } = window.jspdf;
-              const pdfWidth = 210; 
+              const pdfWidth = 210; // A4 width in mm
+              const marginX = 12;   // 12mm horizontal margin
+              const marginY = 12;   // 12mm vertical margin
+              const printableWidth = pdfWidth - (marginX * 2); // 186mm printable width
+
               const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
               pdf.deletePage(1); // Delete the default A4 page to add custom sized pages
 
@@ -2734,10 +2860,11 @@ window.onload = function () {
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                const pdfContentHeight = (canvas.height * printableWidth) / canvas.width;
+                const pageHeight = Math.max(297, pdfContentHeight + (marginY * 2));
 
-                pdf.addPage([pdfWidth, Math.max(297, pdfHeight)], 'portrait');
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                pdf.addPage([pdfWidth, pageHeight], 'portrait');
+                pdf.addImage(imgData, 'JPEG', marginX, marginY, printableWidth, pdfContentHeight);
               }
 
               pdf.save(titulo + '.pdf');
@@ -3024,6 +3151,223 @@ window.mostrarPoolActiva = function() {
   actualizarFabIconoPool();
 };
 
+window.saltarTurnoPool = function() {
+  if (!poolState || !poolState.activa) return;
+
+  if (poolState.esDesempate) {
+    if (!poolState.participantesDesempate || poolState.participantesDesempate.length < 2) return;
+    
+    const activosDesempate = poolState.participantesDesempate.filter(id => {
+      const s = poolState.participantesStats[id];
+      return !s || !s.abandonado;
+    });
+    if (activosDesempate.length < 2) {
+      showSnackbar("No hay otros tiradores en el desempate para saltar el turno.");
+      return;
+    }
+
+    const wasLast = poolState.indiceDesempateActual >= poolState.participantesDesempate.length - 1;
+    const currentId = poolState.participantesDesempate[poolState.indiceDesempateActual];
+    
+    poolState.participantesDesempate = poolState.participantesDesempate.filter(id => id !== currentId);
+    poolState.participantesDesempate.push(currentId);
+
+    poolState.tirosEnTandaActual = 0;
+    
+    if (wasLast) {
+      poolState.indiceDesempateActual = 0;
+      poolState.rondaDesempate++;
+    }
+
+    let loop = 0;
+    while (loop < poolState.participantesDesempate.length) {
+      if (poolState.indiceDesempateActual >= poolState.participantesDesempate.length) {
+        poolState.indiceDesempateActual = 0;
+      }
+      const nextId = poolState.participantesDesempate[poolState.indiceDesempateActual];
+      const s = poolState.participantesStats[nextId];
+      if (!s || !s.abandonado) break;
+      poolState.indiceDesempateActual++;
+      loop++;
+    }
+
+    const shooterObj = tiradores.find(x => x.id === currentId);
+    showSnackbar(`Turno de ${shooterObj ? shooterObj.nombre : 'tirador'} salteado al final.`);
+  } else {
+    if (!poolState.participantes || poolState.participantes.length < 2) return;
+
+    const activosPool = poolState.participantes.filter(id => {
+      const s = poolState.participantesStats[id];
+      return s && !s.abandonado && !s.eliminada;
+    });
+    if (activosPool.length < 2) {
+      showSnackbar("No hay otros tiradores activos para saltar el turno.");
+      return;
+    }
+
+    const wasLast = poolState.indiceActual >= poolState.participantes.length - 1;
+    const currentId = poolState.participantes[poolState.indiceActual];
+
+    poolState.participantes = poolState.participantes.filter(id => id !== currentId);
+    poolState.participantes.push(currentId);
+
+    poolState.tirosEnTandaActual = 0;
+
+    if (wasLast) {
+      poolState.indiceActual = 0;
+      poolState.rondaActual++;
+    }
+
+    let loop = 0;
+    while (loop < poolState.participantes.length) {
+      if (poolState.indiceActual >= poolState.participantes.length) {
+        poolState.indiceActual = 0;
+      }
+      const nextId = poolState.participantes[poolState.indiceActual];
+      const s = poolState.participantesStats[nextId];
+      const inactivo = s && (s.abandonado || (poolState.tipo === 'americana' && s.eliminada));
+      if (!inactivo) break;
+      poolState.indiceActual++;
+      loop++;
+    }
+
+    const shooterObj = tiradores.find(x => x.id === currentId);
+    showSnackbar(`Turno de ${shooterObj ? shooterObj.nombre : 'tirador'} salteado al final.`);
+  }
+
+  sincronizarIdSeleccionadoPool();
+  guardarEnLocalStorage();
+  actualizarInterfazPool();
+};
+
+window.confirmarAbandonoPoolActual = function() {
+  if (!poolState || !poolState.activa) return;
+  const currentId = poolState.esDesempate 
+    ? poolState.participantesDesempate[poolState.indiceDesempateActual] 
+    : poolState.participantes[poolState.indiceActual];
+    
+  const t = tiradores.find(x => x.id === currentId);
+  const nombre = t ? t.nombre : "este tirador";
+  
+  mostrarConfirmacion(
+    `¿Estás seguro de que ${nombre} abandona la Pool?`,
+    () => abandonarPool(currentId),
+    true
+  );
+};
+
+window.abandonarPool = function(id) {
+  if (!poolState || !poolState.activa) return;
+  
+  if (!poolState.participantesStats[id]) {
+    poolState.participantesStats[id] = { tiros: 0, pegados: 0, eliminada: true, abandonado: true, secuencia: [] };
+  } else {
+    poolState.participantesStats[id].eliminada = true;
+    poolState.participantesStats[id].abandonado = true;
+  }
+  
+  const t = tiradores.find(x => x.id === id);
+  showSnackbar(`Tirador ${t ? t.nombre : ''} abandonó la Pool.`);
+  
+  if (poolState.esDesempate) {
+    if (poolState.participantesDesempate.includes(id)) {
+      poolState.participantesDesempate = poolState.participantesDesempate.filter(x => x !== id);
+      if (poolState.indiceDesempateActual >= poolState.participantesDesempate.length) {
+        poolState.indiceDesempateActual = 0;
+      }
+      poolState.tirosEnTandaActual = 0;
+    }
+  } else {
+    if (poolState.participantes[poolState.indiceActual] === id) {
+      poolState.tirosEnTandaActual = 0;
+      let nextIdx = poolState.indiceActual;
+      let count = 0;
+      while (count < poolState.participantes.length) {
+        nextIdx = (nextIdx + 1) % poolState.participantes.length;
+        const pid = poolState.participantes[nextIdx];
+        const s = poolState.participantesStats[pid];
+        if (!s || (!s.eliminada && !s.abandonado)) {
+          poolState.indiceActual = nextIdx;
+          break;
+        }
+        count++;
+      }
+    }
+  }
+  
+  sincronizarIdSeleccionadoPool();
+  guardarEnLocalStorage();
+  actualizarInterfazPool();
+  
+  evaluarFinPoolTrasAbandono();
+};
+
+function evaluarFinPoolTrasAbandono() {
+  if (!poolState || !poolState.activa) return;
+  const activos = poolState.participantes.filter(pid => {
+    const s = poolState.participantesStats[pid];
+    return s && !s.eliminada && !s.abandonado;
+  });
+  
+  if (activos.length === 1) {
+    finalizarPool(activos[0]);
+  } else if (activos.length === 0) {
+    finalizarPool();
+  }
+}
+
+function solicitarConfiguracionDesempate(empatados, maxPegados) {
+  pendingDesempateData = { empatados, maxPegados };
+  document.getElementById("modal-desempate-opciones").classList.remove("hidden");
+}
+
+window.confirmarDesempateSeleccionado = function(modo) {
+  document.getElementById("modal-desempate-opciones").classList.add("hidden");
+  if (!pendingDesempateData) return;
+  
+  const { empatados, maxPegados } = pendingDesempateData;
+  pendingDesempateData = null;
+  
+  iniciarDesempatePoolConModo(empatados, maxPegados, modo);
+};
+
+function iniciarDesempatePoolConModo(empatados, maxPegados, modo) {
+  poolState.esDesempate = true;
+  poolState.modoDesempate = modo;
+  poolState.rondaDesempate = 1;
+  poolState.participantesDesempate = [...empatados];
+  poolState.indiceDesempateActual = 0;
+  poolState.tirosEnTandaActual = 0;
+  poolState.desempateStats = {};
+  
+  if (modo === 'muerte_subita') {
+    poolState.tandas = 1;
+  } else if (modo === 'tandas_2') {
+    poolState.tandas = 2;
+  } else if (modo === 'americana') {
+    poolState.tandas = 5;
+  }
+  
+  empatados.forEach(id => {
+    poolState.desempateStats[id] = { hitsEnRonda: 0 };
+  });
+  
+  const nombres = empatados.map(id => {
+    const t = tiradores.find(x => x.id === id);
+    return t ? t.nombre : "";
+  }).filter(Boolean).join(" y ");
+  
+  idSeleccionado = poolState.participantesDesempate[0];
+  
+  guardarEnLocalStorage();
+  actualizarInterfazPool();
+  
+  let modoDesc = 'Muerte Súbita';
+  if (modo === 'tandas_2') modoDesc = 'Tandas de 2';
+  if (modo === 'americana') modoDesc = 'Americana';
+  showSnackbar(`Desempate (${modoDesc}) entre ${nombres}`);
+}
+
 window.mostrarPantallaConfiguracion = mostrarPantallaConfiguracion;
 window.toggleMostrarDinero = toggleMostrarDinero;
 window.irAPantallaPrincipal = irAPantallaPrincipal;
@@ -3138,6 +3482,9 @@ function sanitizarMensajeError(error) {
   if (!error) return 'Ocurrió un error inesperado.';
   const msg = error.message || error.toString();
   
+  if (msg.includes('Unsupported provider') || msg.includes('provider is not enabled') || msg.includes('provider_not_enabled') || msg.includes('validation_failed')) {
+    return 'El inicio de sesión con Google aún no está activado en tu panel de Supabase. Requiere habilitar el proveedor Google en Supabase Dashboard (Authentication -> Providers).';
+  }
   if (msg.includes('Invalid login credentials')) {
     return 'Correo electrónico o contraseña incorrectos.';
   }
@@ -3215,6 +3562,8 @@ window.evaluarFortalezaPassword = function(pwd) {
 };
 
 window.loginConGoogle = async function() {
+  const btn = document.getElementById('btn-google-auth');
+  if (btn) btn.disabled = true;
   try {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -3224,7 +3573,10 @@ window.loginConGoogle = async function() {
     });
     if (error) throw error;
   } catch (error) {
+    console.error('Error con Google OAuth:', error);
     mostrarAlerta(sanitizarMensajeError(error));
+  } finally {
+    if (btn) btn.disabled = false;
   }
 };
 
