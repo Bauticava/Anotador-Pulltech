@@ -104,6 +104,7 @@ function showSnackbar(mensaje) {
         baseTiradores = [],
         idSeleccionado = null,
         idHistorialDesplegado = null,
+        ultimoTiradorQueTiro = null,
         estadoApp = "inicio";
       let precioHelice = 0,
         minimoPodio = 10,
@@ -560,9 +561,12 @@ function showSnackbar(mensaje) {
         const sinDisparos = !poolState.historialTiros || poolState.historialTiros.length === 0;
         if (sinDisparos) {
           poolState.participantes.forEach(id => {
+            const stats = poolState.participantesStats[id];
+            if (stats && stats.inscripcionDevuelta) return;
             const t = tiradores.find(x => x.id === id);
             if (t) {
               t.costoInscripciones = Math.max(0, (t.costoInscripciones || 0) - poolState.inscripcion);
+              if (stats) stats.inscripcionDevuelta = true;
             }
           });
           
@@ -2027,6 +2031,14 @@ window.onload = function () {
           if (idSeleccionado === null) return;
           const t = tiradores.find((x) => x.id === idSeleccionado);
           if (t) {
+            if (ultimoTiradorQueTiro !== null && ultimoTiradorQueTiro !== t.id) {
+              if (!t.rondasSeparadores) t.rondasSeparadores = [];
+              if (t.tiros.length > 0 && !t.rondasSeparadores.includes(t.tiros.length)) {
+                t.rondasSeparadores.push(t.tiros.length);
+              }
+            }
+            ultimoTiradorQueTiro = t.id;
+
             t.tiros.push(pego);
             
             guardarEnLocalStorage();
@@ -2077,6 +2089,9 @@ window.onload = function () {
           if (idSeleccionado === null) return;
           const t = tiradores.find((x) => x.id === idSeleccionado);
           if (t && t.tiros.length > 0) {
+            if (t.rondasSeparadores && t.rondasSeparadores.includes(t.tiros.length)) {
+              t.rondasSeparadores = t.rondasSeparadores.filter(x => x !== t.tiros.length);
+            }
             t.tiros.pop();
             guardarEnLocalStorage();
             actualizarInterfaz();
@@ -2229,24 +2244,36 @@ window.onload = function () {
               ? "p-1.5 rounded-md bg-red-700/90 hover:bg-red-800 text-white transition-colors cursor-pointer flex items-center justify-center"
               : (currentTheme === "dark" ? "p-1.5 text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center justify-center" : "p-1.5 text-red-600 hover:text-red-700 transition-colors cursor-pointer flex items-center justify-center");
 
-            const ultimos5 = t.tiros.slice(-5);
-            const miniSecuencia = ultimos5.length > 0 
-              ? ultimos5.map(x => x ? '<div class="w-2 h-2 rounded-full bg-green-500 shadow-sm border border-green-600"></div>' : '<div class="w-2 h-2 rounded-full bg-red-500 shadow-sm border border-red-600"></div>').join("") 
-              : "";
+            const ultimos9 = t.tiros.slice(-9);
+            const startIndex = Math.max(0, t.tiros.length - 9);
+            const miniSecuenciaArray = [];
+            for (let i = 0; i < ultimos9.length; i++) {
+              const globalIdx = startIndex + i;
+              if (globalIdx > 0 && t.rondasSeparadores && t.rondasSeparadores.includes(globalIdx)) {
+                miniSecuenciaArray.push('<div class="w-px h-3.5 bg-gray-500/50 mx-0.5"></div>');
+              }
+              miniSecuenciaArray.push(ultimos9[i] ? '<div class="w-2 h-2 rounded-full bg-green-500 shadow-sm border border-green-600"></div>' : '<div class="w-2 h-2 rounded-full bg-red-500 shadow-sm border border-red-600"></div>');
+            }
+            const miniSecuencia = miniSecuenciaArray.join("");
             const miniSecuenciaHTML = miniSecuencia ? `<div class="flex items-center gap-1 mx-2 bg-black/10 dark:bg-black/30 rounded-full px-1.5 py-0.5">${miniSecuencia}</div>` : '';
 
-            idiv.innerHTML = `<div class="flex justify-between items-center w-full"><div class="truncate font-semibold text-sm flex-1 mr-2">${t.nombre}</div>${miniSecuenciaHTML}<div class="flex items-center gap-2 flex-shrink-0"><span class="text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded ${currentTheme === "dark" ? "bg-gray-800 text-gray-400" : (esS ? "bg-white/20 text-white" : "bg-gray-200 text-gray-600")}">H: ${t.tiros.length} | P:${s.pegados}</span><button onclick="editarTirador(${t.id}, event)" class="${editBtnClass}" title="Editar"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button><button onclick="eliminarTirador(${t.id}, event)" class="${deleteBtnClass}" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div></div>`;
+            idiv.innerHTML = `<div class="flex justify-between items-center w-full"><div class="truncate font-semibold text-sm flex-1 mr-2">${t.nombre}</div>${miniSecuenciaHTML}<div class="flex items-center gap-2 flex-shrink-0"><span class="text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded ${currentTheme === "dark" ? "bg-gray-800 text-gray-400" : (esS ? "bg-white/20 text-white" : "bg-gray-200 text-gray-600")}">H: ${t.tiros.length} | P:${s.pegados}</span></div></div>`;
             
             if (mH) {
-              const ct = t.tiros.length > 0
-                ? t.tiros.map((x) => (x ? '<div class="w-3 h-3 rounded-full flex-shrink-0 bg-green-500 shadow-sm border border-green-600"></div>' : '<div class="w-3 h-3 rounded-full flex-shrink-0 bg-red-500 shadow-sm border border-red-600"></div>')).join("")
-                : "Sin tiros individuales";
-              const ctHTML = t.tiros.length > 0 ? `<div class="flex flex-wrap items-center gap-1.5 py-0.5">${ct}</div>` : `<span class="tracking-widest font-mono opacity-50 py-0.5">${ct}</span>`;
+              const ctArray = [];
+              for (let i = 0; i < t.tiros.length; i++) {
+                if (i > 0 && t.rondasSeparadores && t.rondasSeparadores.includes(i)) {
+                  ctArray.push('<div class="w-px h-4 bg-gray-500/50 mx-0.5"></div>');
+                }
+                ctArray.push(t.tiros[i] ? '<div class="w-3 h-3 rounded-full flex-shrink-0 bg-green-500 shadow-sm border border-green-600"></div>' : '<div class="w-3 h-3 rounded-full flex-shrink-0 bg-red-500 shadow-sm border border-red-600"></div>');
+              }
+              const ct = ctArray.join("");
+              const ctHTML = t.tiros.length > 0 ? `<div class="flex flex-wrap items-center gap-1.5 py-0.5">${ct}</div>` : `<span class="tracking-widest font-mono opacity-50 py-0.5">Sin tiros individuales</span>`;
               
               const hdiv = document.createElement("div");
               hdiv.className =
                 "mt-3 -mx-3 -mb-3 p-3 border-t border-gray-700/50 text-xs space-y-2 rounded-b-lg expanded-details";
-              hdiv.innerHTML = `${ctHTML}<div class="flex justify-between text-[11px] opacity-70 mt-2"><span>Racha: ${s.rachaActual} | Max: ${s.rachaMaxima}</span><span>Total: $${s.costoTotal.toFixed(0)}</span></div><div class="grid grid-cols-2 gap-2 pt-1"><button onclick="imprimirReporteIndividual(${t.id}, event)" class="btn-pdf text-white text-[10px] py-1 rounded shadow-sm transition-colors flex items-center justify-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg> PDF</button><button onclick="compartirWhatsAppIndividual(${t.id}, event)" class="btn-wpp text-white text-[10px] py-1 rounded shadow-sm transition-colors flex items-center justify-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 013 21c.287-.852.793-1.637 1.464-2.274C3.064 17.202 2.25 14.73 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg> Wpp</button></div>`;
+              hdiv.innerHTML = `${ctHTML}<div class="flex justify-between text-[11px] opacity-70 mt-2"><span>Racha: ${s.rachaActual} | Max: ${s.rachaMaxima}</span><span>Total: $${s.costoTotal.toFixed(0)}</span></div><div class="grid grid-cols-4 gap-2 pt-1"><button onclick="editarTirador(${t.id}, event)" class="${editBtnClass}" title="Editar"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button><button onclick="eliminarTirador(${t.id}, event)" class="${deleteBtnClass}" title="Eliminar"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button><button onclick="imprimirReporteIndividual(${t.id}, event)" class="btn-pdf text-white text-[10px] py-1 rounded shadow-sm transition-colors flex items-center justify-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg> PDF</button><button onclick="compartirWhatsAppIndividual(${t.id}, event)" class="btn-wpp text-white text-[10px] py-1 rounded shadow-sm transition-colors flex items-center justify-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 013 21c.287-.852.793-1.637 1.464-2.274C3.064 17.202 2.25 14.73 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg> Wpp</button></div>`;
               idiv.appendChild(hdiv);
             }
           } else {
@@ -3339,6 +3366,12 @@ window.abandonarPool = function(id) {
   }
   
   const t = tiradores.find(x => x.id === id);
+  if (t) {
+    if (poolState.participantesStats[id].tiros === 0 && !poolState.participantesStats[id].inscripcionDevuelta) {
+      t.costoInscripciones = Math.max(0, (t.costoInscripciones || 0) - poolState.inscripcion);
+      poolState.participantesStats[id].inscripcionDevuelta = true;
+    }
+  }
   showSnackbar(`Tirador ${t ? t.nombre : ''} abandonó la Pool.`);
   
   if (poolState.esDesempate) {
